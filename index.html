@@ -41,7 +41,62 @@ a{color:var(--c)}
 <h1>The big picture on one page</h1>
 <p class="sub">A model decides <b>what</b>. Code decides <b>every number</b> and <b>every verdict</b>. Below: where each letter sits in the flow, and what happens to one request.</p>
 
-<h2>1. The flow, with every letter placed</h2>
+<h2 style="margin-top:28px">Part A. Our pipeline (GREM-4): same idea, in time order</h2>
+<p><b>The document</b> says <i>who</i> does what (layers). <b>Our pipeline</b> says <i>when</i> (stages). Same rule underneath: the model proposes, code decides every number.</p>
+<figure>
+<svg viewBox="0 0 900 400" role="img" aria-label="Our pipeline mapped to the layers">
+<defs><marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d2330"/></marker></defs>
+<text x="10" y="18" class="b">OUR PIPELINE (in time order)</text>
+<rect x="10" y="30" width="103" height="62" rx="8" class="bc"/><text x="61.5" y="56" text-anchor="middle" class="b">Door in</text><text x="61.5" y="74" text-anchor="middle" class="s">code</text>
+<rect x="121" y="30" width="103" height="62" rx="8" class="bm"/><text x="172.5" y="56" text-anchor="middle" class="b">Understand</text><text x="172.5" y="74" text-anchor="middle" class="s">model + engine</text>
+<rect x="232" y="30" width="103" height="62" rx="8" class="bc"/><text x="283.5" y="56" text-anchor="middle" class="b">Resolve</text><text x="283.5" y="74" text-anchor="middle" class="s">code only</text>
+<rect x="343" y="30" width="103" height="62" rx="8" class="bn"/><path d="M343 38 a8 8 0 0 1 8 -8 H394 V92 H351 a8 8 0 0 1 -8 -8 Z" fill="#fbeee4" stroke="none"/><path d="M394 30 H438 a8 8 0 0 1 8 8 V84 a8 8 0 0 1 -8 8 H394 Z" fill="#e6f0f8" stroke="none"/><rect x="343" y="30" width="103" height="62" rx="8" fill="none" stroke="#9a9484" stroke-width="1.3"/><text x="394.5" y="56" text-anchor="middle" class="b">Plan</text><text x="394.5" y="74" text-anchor="middle" class="s">model drafts,</text><text x="394.5" y="86" text-anchor="middle" class="s">code completes</text>
+<rect x="454" y="30" width="103" height="62" rx="8" class="bc"/><text x="505.5" y="56" text-anchor="middle" class="b">Verify</text><text x="505.5" y="74" text-anchor="middle" class="s">code</text>
+<rect x="565" y="30" width="103" height="62" rx="8" class="bc"/><text x="616.5" y="56" text-anchor="middle" class="b">Apply</text><text x="616.5" y="74" text-anchor="middle" class="s">code</text>
+<rect x="676" y="30" width="103" height="62" rx="8" class="bn"/><text x="727.5" y="56" text-anchor="middle" class="b">Respond</text><text x="727.5" y="74" text-anchor="middle" class="s">code + wording</text>
+<rect x="787" y="30" width="103" height="62" rx="8" class="bc"/><text x="838.5" y="56" text-anchor="middle" class="b">Door out</text><text x="838.5" y="74" text-anchor="middle" class="s">code</text>
+<path d="M113 61 H121" class="ln" marker-end="url(#p)"/>
+<path d="M224 61 H232" class="ln" marker-end="url(#p)"/>
+<path d="M335 61 H343" class="ln" marker-end="url(#p)"/>
+<path d="M446 61 H454" class="ln" marker-end="url(#p)"/>
+<path d="M557 61 H565" class="ln" marker-end="url(#p)"/>
+<path d="M668 61 H676" class="ln" marker-end="url(#p)"/>
+<path d="M779 61 H787" class="ln" marker-end="url(#p)"/>
+<text x="10" y="124" class="b">WHERE THE DOCUMENT’S LAYERS FALL</text>
+<rect x="10" y="138" width="103" height="30" rx="6" class="bc"/><text x="61.5" y="157" text-anchor="middle" class="s" style="fill:#1d2330">L0 door</text>
+<rect x="787" y="138" width="103" height="30" rx="6" class="bc"/><text x="838.5" y="157" text-anchor="middle" class="s" style="fill:#1d2330">L0 door</text>
+<rect x="10" y="172" width="880" height="30" rx="6" class="bc"/><text x="450.0" y="191" text-anchor="middle" class="s" style="fill:#1d2330">L1  the IR: every stage reads and writes it, nothing reads the file directly</text>
+<rect x="121" y="206" width="214" height="30" rx="6" class="bc"/><text x="228.0" y="225" text-anchor="middle" class="s" style="fill:#1d2330">L2: asked, then computes</text>
+<rect x="454" y="206" width="103" height="30" rx="6" class="bc"/><text x="505.5" y="225" text-anchor="middle" class="s" style="fill:#1d2330">L2 engine</text>
+<rect x="121" y="240" width="103" height="30" rx="6" class="bn"/><text x="172.5" y="259" text-anchor="middle" class="s" style="fill:#1d2330">L3 map card</text>
+<rect x="121" y="274" width="103" height="30" rx="6" class="bm"/><text x="172.5" y="293" text-anchor="middle" class="s" style="fill:#1d2330">L4 model</text>
+<rect x="343" y="274" width="103" height="30" rx="6" class="bm"/><text x="394.5" y="293" text-anchor="middle" class="s" style="fill:#1d2330">L4 model</text>
+<rect x="343" y="308" width="103" height="30" rx="6" class="bc"/><text x="394.5" y="327" text-anchor="middle" class="s" style="fill:#1d2330">L5 starts</text>
+<rect x="454" y="308" width="214" height="30" rx="6" class="bc"/><text x="561.0" y="327" text-anchor="middle" class="s" style="fill:#1d2330">L5: judge, then publish</text>
+<rect x="676" y="342" width="103" height="30" rx="6" class="bn"/><text x="727.5" y="361" text-anchor="middle" class="s" style="fill:#1d2330">no layer</text>
+<text x="10" y="392" class="s">Blue = code. Orange = model. Respond has no layer in the document.</text>
+</svg>
+<figcaption class="s" style="font-size:14px;color:#5d6678">Each stage reads only the IR. The relation engine (L2) is not a stage. It is asked by Understand and Verify, and it does the work in Resolve.</figcaption>
+</figure>
+
+<table>
+<tr><th>Our stage</th><th>Document layers</th><th>How ours differs from the document</th></tr>
+<tr><td><b>Door in</b></td><td><span class="tag">L0</span> <span class="tag">L1</span></td><td>Document: “a codec”. Ours also keeps the original bytes and records the frame (units, axes) first: IR steps 1–2.</td></tr>
+<tr><td><b>Understand</b></td><td><span class="tag n">L3</span> <span class="tag m">L4</span> + <span class="tag">L2</span> queries</td><td>Document has one proposal layer. Ours stops earlier: it only decides <i>what is asked and which things</i>, and ends in <b>propose / ask / refuse</b>. “Refuse” (operation not supported) is ours.</td></tr>
+<tr><td><b>Resolve</b></td><td><span class="tag">L2</span></td><td>Document has no such stage; L2 is only a service. Ours makes it a visible step: relations become computed values (Q1, Q2) with their origin. No model.</td></tr>
+<tr><td><b>Plan</b></td><td><span class="tag m">L4</span> + start of <span class="tag">L5</span></td><td>Document: model proposes, authority applies. Ours: code first fixes <b>what may change</b> and <b>what must be true afterwards</b>. Model drafts, citing handles. Code fills values, IDs and undo.</td></tr>
+<tr><td><b>Verify</b></td><td><span class="tag">L5</span></td><td>Document bundles checking and committing in one layer. Ours separates <i>judging a candidate</i> (before vs after).</td></tr>
+<tr><td><b>Apply</b></td><td><span class="tag">L5</span> <span class="tag">L0</span></td><td>Ours: export, re-read, compare, then commit. The user approves the exact candidate (from the October plan; the document does not mention it).</td></tr>
+<tr><td><b>Respond</b></td><td>none</td><td>Not in the document. It only defines the return paths. Ours is a real stage: what changed, plus the checks that ran.</td></tr>
+<tr><td><b>Door out</b></td><td><span class="tag">L0</span></td><td>Same.</td></tr>
+</table>
+
+<div class="req"><b>IR difference.</b> The document says what the IR must <i>contain</i> (R1–R5). Ours says how it is <i>built</i>: nine steps. Four are not in R1–R5: <b>Revision</b>, <b>Frame</b>, <b>Unknown extras</b>, <b>Check</b>.</div>
+
+<div class="req" style="background:#f8f0d6;border-color:#e6d79c"><b>Status, honestly.</b> Only Door in and IR steps 1–2 are written down for GREM-4. Understand, Resolve and Plan come from GREM-3 and must be rebuilt to read the IR. Verify, Apply and Respond were never built. This mapping is my reading, not an official document.</div>
+
+<h2 style="margin-top:44px">Part B. The document’s own view (original)</h2>
+<h2 style="margin-top:14px">1. The flow, with every letter placed</h2>
 <figure>
 <svg viewBox="0 0 900 650" role="img" aria-label="Master flow">
 <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d2330"/></marker>
