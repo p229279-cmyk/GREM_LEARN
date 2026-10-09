@@ -34,6 +34,15 @@ th{background:#efeadf}
 .why li{margin:7px 0}
 a{color:var(--c)}
 .foot{margin-top:50px;color:var(--muted);font-size:14px}
+
+.st{background:#fff;border:1px solid var(--rule);border-radius:10px;padding:14px 18px;margin:16px 0}
+.st .h{font:700 18px/1.3 Charter,Georgia,serif;margin-bottom:6px}
+.st p{margin:5px 0}
+.st .k{display:inline-block;min-width:78px;font:700 12px/1 ui-sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#5d6678}
+.st .add{background:#e5f3ea;border-radius:6px;padding:6px 10px;margin-top:8px}
+pre.x{font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;background:#1f2430;color:#e8e6df;padding:12px 14px;border-radius:8px;overflow:auto;margin:8px 0}
+code{font:13.5px ui-monospace,Menlo,Consolas,monospace;background:#f0ece1;padding:1px 5px;border-radius:4px}
+.jump{display:inline-block;background:#e5f3ea;border:1px solid #bddfc8;border-radius:8px;padding:8px 12px;margin:10px 0}
 </style>
 </head>
 <body>
@@ -41,6 +50,7 @@ a{color:var(--c)}
 <h1>The big picture on one page</h1>
 <p class="sub">A model decides <b>what</b>. Code decides <b>every number</b> and <b>every verdict</b>. Below: where each letter sits in the flow, and what happens to one request.</p>
 
+<div class="jump"><b>New:</b> <a href="#partc">Part C. From scratch, by hand</a>: one tiny map, one request, every step done manually, with the reason for each thing we add.</div>
 <h2 style="margin-top:28px">Part A. Our pipeline (GREM-4): same idea, in time order</h2>
 <p><b>The document</b> says <i>who</i> does what (layers). <b>Our pipeline</b> says <i>when</i> (stages). Same rule underneath: the model proposes, code decides every number.</p>
 <figure>
@@ -197,6 +207,58 @@ a{color:var(--c)}
 <tr><td><b>C0–C6</b></td><td>the build order</td><td>Measure → relations → IR → critic → train.</td></tr>
 </table>
 
+<h2 id="partc" style="margin-top:56px">Part C. From scratch, by hand: why each thing exists</h2>
+<p>Forget the pipeline. We start with nothing, do one job manually, and every time we get stuck we add exactly one thing. By the end, each letter is something we <i>needed</i>, not something we were told.</p>
+<div class="st"><div class="h">Step 0 · What we have</div><p>One file (simplified) and one sentence.</p><pre class="x">&lt;road id="8" length="200"&gt;
+  &lt;link&gt;&lt;successor elementType="junction" elementId="8"/&gt;&lt;/link&gt;
+  &lt;planView&gt;&lt;geometry s="0" x="0" y="0" hdg="0" length="200"&gt;&lt;line/&gt;&lt;/geometry&gt;&lt;/planView&gt;
+  &lt;lanes&gt;&lt;laneSection s="0"&gt;
+    &lt;left&gt;  &lt;lane id="1"  type="driving"&gt;&lt;width sOffset="0" a="3.5" b="0" c="0" d="0"/&gt;&lt;/lane&gt;&lt;/left&gt;
+    &lt;center&gt;&lt;lane id="0"  type="none"/&gt;&lt;/center&gt;
+    &lt;right&gt; &lt;lane id="-1" type="driving"&gt;&lt;width sOffset="0" a="3.5" b="0" c="0" d="0"/&gt;&lt;/lane&gt;
+           &lt;lane id="-2" type="driving"&gt;&lt;width sOffset="0" a="3.5" b="0" c="0" d="0"/&gt;&lt;/lane&gt;&lt;/right&gt;
+  &lt;/laneSection&gt;&lt;/lanes&gt;
+  &lt;signals&gt;&lt;signal id="55" s="60" t="-8.0" orientation="+"/&gt;&lt;/signals&gt;
+&lt;/road&gt;
+&lt;junction id="8" name="J1"&gt; ... &lt;/junction&gt;</pre><p><b>Sentence:</b> “Move signal 55 to 10 m before the junction.”</p><figure><svg viewBox="0 0 880 250" role="img" aria-label="Road 8 with signal 55 and the target position">
+<defs><marker id="q" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b4531f"/></marker></defs>
+<rect x="40" y="70" width="720" height="30" fill="#cfcabd" stroke="#9a9484"/><text x="46" y="89" class="s">lane 1</text>
+<rect x="40" y="100" width="720" height="30" fill="#cfcabd" stroke="#9a9484"/><text x="46" y="119" class="s">lane −1  (edge at t = −3.5)</text>
+<rect x="40" y="130" width="720" height="30" fill="#cfcabd" stroke="#9a9484"/><text x="46" y="149" class="s">lane −2  (edge at t = −7.0)</text>
+<line x1="40" y1="100" x2="760" y2="100" stroke="#b4531f" stroke-width="3"/>
+<rect x="760" y="60" width="110" height="110" rx="8" fill="#fff" stroke="#9a9484" stroke-width="1.3"/><text x="815" y="120" text-anchor="middle" class="b">junction 8</text>
+<rect x="250" y="163" width="12" height="12" fill="#b4531f"/><text x="256" y="195" text-anchor="middle" class="b m">signal 55</text><text x="256" y="209" text-anchor="middle" class="s">s=60, t=−8.0</text>
+<rect x="718" y="163" width="12" height="12" fill="none" stroke="#b4531f" stroke-width="2" stroke-dasharray="3 2"/><text x="724" y="195" text-anchor="middle" class="b m">wanted</text><text x="724" y="209" text-anchor="middle" class="s">s=190 ?</text>
+<path d="M268 169 H712" stroke="#b4531f" stroke-width="1.5" fill="none" stroke-dasharray="5 4" marker-end="url(#q)"/>
+<line x1="40" y1="228" x2="760" y2="228" stroke="#1d2330" stroke-width="1.5"/>
+<g class="s"><text x="40" y="244">s=0</text><text x="248" y="244">60</text><text x="708" y="244">190</text><text x="745" y="244">200 (end)</text></g>
+<text x="40" y="58" class="s">road 8, 200 m long, straight, drawn left to right. t = sideways offset; the reference line is the orange line.</text>
+</svg><figcaption class="s" style="font-size:14px;color:#5d6678">What the file means, drawn. The file never shows you this picture; you have to rebuild it.</figcaption></figure></div>
+<div class="st"><div class="h">Step 1 · First try: give the file and the sentence to a language model</div><p><span class="k">Need</span>The new s value.</p><p><span class="k">By hand</span>Model answers <code>s="190"</code>. Correct here, because the road is straight and short.</p><p><span class="k">Why</span>Make it real: a curved road, a 12 km map, “the middle of the road”. The model gives <code>s="2"</code> or <code>190.4</code>: plausible, unmarked, wrong. (The old pipeline placed a “midpoint” sign 2 m in instead of 154 m, and said done.) Language is the model’s strength. Exact numbers are not.</p><p class="add"><span class="k">So we add</span><b>The hard rule:</b> the model never writes a number. So something else must produce the numbers. That something has to <i>understand the map</i>. Everything below is what that takes.</p></div>
+<div class="st"><div class="h">Step 2 · Do the job by hand: what questions must I answer?</div><p><span class="k">Need</span>A list, in order.</p><p><span class="k">By hand</span>1) Which thing is “signal 55”? 2) Which road is it on? 3) Which junction is “the junction”? 4) Is it at the start or the end of road 8? 5) Where is that end, in s? 6) Subtract 10. 7) Is the new place a legal place for a signal? 8) Write it back without breaking anything else.</p><p><span class="k">Why</span>Look at what kind of questions they are. 3–4 is <b>“what is connected to what”</b>. 5–6 is <b>“where, along the road”</b>. 7 is <b>“is it inside a lane, which side, which way does it face”</b>. These are the same few kinds of question every time.</p><p class="add"><span class="k">So we add</span>A fixed list of question types, answered by code: the <b>relation families F1–F5</b>. We did not choose them. The job forced them. Now each question gets its own step.</p></div>
+<div class="st"><div class="h">Step 3 · Names: “8” means two things</div><p><span class="k">Need</span>Point at things unambiguously.</p><p><span class="k">By hand</span>In the file, road 8 and junction 8 both have id “8”. “Remove 8” is ambiguous. Also: if I insert a new lane, lane −3 becomes lane −4, and anything saying “lane −3” now points at a different lane.</p><p><span class="k">Why</span>Names in a file are labels that change or collide. If our own notes use them, they break the moment anything is edited.</p><p class="add"><span class="k">So we add</span><b>R1, permanent IDs.</b> Give every thing its own internal name and remember the file label separately: <code>road 8 → road:a1</code>, <code>junction 8 → junction:b7</code>, <code>signal 55 → signal:c3</code>, <code>lane −2 of road 8 → lane:d4</code>. Renumbering changes the label, never the ID.</p></div>
+<div class="st"><div class="h">Step 4 · Reading the connections</div><p><span class="k">Need</span>Answer “which junction is at which end of road 8?”</p><p><span class="k">By hand</span>Read <code>&lt;successor elementType="junction" elementId="8"/&gt;</code>. Successor means the <i>end</i> of the road. So junction 8 (now junction:b7) is at the end.</p><p><span class="k">Why</span>By hand I scan the XML each time. Slow, and I forget things: later, to delete a lane, I must find everything that points at it.</p><p class="add"><span class="k">So we add</span><b>R2, links as edges.</b> Write it once as a line: <code>road:a1 --successor--&gt; junction:b7</code>. “What touches road 8?” is now a lookup. “What points at this lane?” lists the things that would break.</p></div>
+<div class="st"><div class="h">Step 5 · Where is the end of the road, in numbers?</div><p><span class="k">Need</span>Q1 = the s value of the end.</p><p><span class="k">By hand</span>Easy answer: <code>length="200"</code>. But is it true? The real geometry is a list of pieces (line, arc, spiral…), each with its own length. I should add them up: 200. On the real customer map, GREM-2 found 90 roads where the declared length and the pieces disagree.</p><p><span class="k">Why</span>Trusting one attribute is exactly how the old pipeline went wrong. Also for “the middle of a curved road” you must evaluate the curve, and the curve parameter is not the distance (one old formula was off by up to 33 m).</p><p class="add"><span class="k">So we add</span><b>R3, shape stored twice.</b> Keep the file’s formula (to write back exactly) <i>and</i> a computed version (points along the road) that code measures. Now <code>Q1 = 200.0</code> is a measurement, not a guess.</p></div>
+<div class="st"><div class="h">Step 6 · Is the new place legal?</div><p><span class="k">Need</span>Is (s=190, t=−8.0) inside a driving lane?</p><p><span class="k">By hand</span>Lane −1 is 3.5 wide, from t=0 to −3.5. Lane −2 is from −3.5 to −7.0. Signal at t=−8.0 is 1.0 m beyond the outer edge: <b>outside, clear of traffic</b>. If it had been t=−5, it would sit in lane −2: <b>blocked</b>. To get the widths I evaluated <code>a + b·ds + c·ds² + d·ds³</code>.</p><p><span class="k">Why</span>Widths change along the road. A record says only where it <i>starts</i>; it “holds until the next record”. Width at s=137 with records <code>(0: a=3.5)</code> and <code>(100: a=3.0, b=0.01)</code>? Use the second, ds=37: 3.0+0.01·37 = 3.37 m. Insert a record and everything after quietly changes. If you split a record you must <i>re-base</i> it: copying <code>a=3.0 b=0.02 c=0.001</code> to start at ds=10 gives 3.525 m at 15 m in; the true value is 4.125 m.</p><p class="add"><span class="k">So we add</span><b>R4, explicit extents.</b> Every value states <code>[start, end)</code>. Splitting is then closing one range and opening another. And the question “which records does s 140–160 touch?” is the <b>interval family F2</b>; “inside a lane?” is <b>F1</b>; “which lane is second from the edge?” is <b>F3</b>.</p></div>
+<div class="st"><div class="h">Step 7 · Units, and where did 190 come from?</div><p><span class="k">Need</span>Trust the number, and be able to prove it.</p><p><span class="k">By hand</span>User says “10 m”. If they said “10 feet”: 10 ft = 3.048 m, so s = 200 − 3.048 = 196.952. (The old pipeline turned “150 ft” into s=2.0 instead of 45.72.) Then write down: <code>s = 190.0, from: end of road 8 (200.0, measured) − 10 (said by user)</code>.</p><p><span class="k">Why</span>Without units, “50” is km/h or mph. Without the origin, nobody can tell a measured value from a default, and defaults sneaked in as if the user had said them.</p><p class="add"><span class="k">So we add</span><b>The frame</b> (units, axes) and <b>R5, provenance</b>: every value carries who said it and from what. “No value from the model” becomes checkable: no value has the origin “model”.</p></div>
+<div class="st"><div class="h">Step 8 · Don’t destroy what I don’t understand</div><p><span class="k">Need</span>Write the file back without losing anything.</p><p><span class="k">By hand</span>Suppose signal 55 also holds a <code>&lt;userData&gt;</code> block I never read. If I rebuild the file from only what I understood, it vanishes. The old pipeline silently lost 104 elements and 422 attributes this way.</p><p><span class="k">Why</span>An edit that deletes data nobody asked about is a bug, even if the signal moved correctly.</p><p class="add"><span class="k">So we add</span><b>Unknown extras</b> kept raw, and the <b>original file archived</b> (Revision). Exporting changes only the one value; everything else keeps its bytes.</p></div>
+<div class="st"><div class="h">Step 9 · So where is the model?</div><p><span class="k">Need</span>Turn language into the right question.</p><p><span class="k">By hand</span>“Before the junction” → relation <i>before</i>, anchor = junction at the end of road 8, distance = 10 m. “Near the junction” → no distance → <b>ask</b>. “Past the junction” → different direction. If road 8 has junctions at both ends → <b>ask which</b>.</p><p><span class="k">Why</span>This is meaning, which a model does well. The model <i>asks</i> the engine (“what is at the end of road 8?”) and writes the answer as a reference, never a value.</p><p class="add"><span class="k">So we add</span><b>The model writes</b> <code>set signal 55 s = Q2</code> where <code>Q2 = Q1 − 10</code>. Q1, Q2 come from code. This is E3: references, not literals. That is the whole job of the model here.</p></div>
+<div class="st"><div class="h">Step 10 · Judge the result, honestly</div><p><span class="k">Need</span>Decide whether the edit is OK.</p><p><span class="k">By hand</span>Take a copy, apply the edit, run the rules <b>before</b> and <b>after</b>. Say the map already has one defect: “0.3 m gap between road 8 and the next road”. Before: <code>{gap}</code>. After: <code>{gap}</code>. Same list → pass. If after shows <code>{gap, signal inside lane}</code> → the new item is ours → block.</p><p><span class="k">Why</span>Real maps are already imperfect. “Zero problems required” would block every edit. “Count not higher” lets one problem swap for another. So compare <b>which</b> problems, not how many. Also check we only touched what we said (signal 55’s s) and that the result is what we asked (s = 190).</p><p class="add"><span class="k">So we add</span>A <b>judge that compares before and after</b> and decides; the model is not asked. And a way for it to say “back to the model, try again”, or “ask the user”.</p></div>
+<div class="st"><div class="h">Step 11 · What we ended up with, and why</div>
+<table>
+<tr><th>The problem we hit</th><th>What we added</th></tr>
+<tr><td>Model writes plausible wrong numbers</td><td>Rule: model never writes numbers (references only)</td></tr>
+<tr><td>Same id means two things; renumbering breaks references</td><td>R1 permanent IDs</td></tr>
+<tr><td>Scanning XML for “what touches what”</td><td>R2 links as edges</td></tr>
+<tr><td>Formula is not a measurable value; declared length can lie</td><td>R3 shape stored twice</td></tr>
+<tr><td>“Holds until the next record”</td><td>R4 explicit start and end</td></tr>
+<tr><td>Units unclear; defaults pass as user input</td><td>Frame + R5 where each value came from</td></tr>
+<tr><td>Edit deletes what we didn’t understand</td><td>Unknown extras + archived original</td></tr>
+<tr><td>Questions repeat in a few shapes</td><td>F1–F5 as exact code</td></tr>
+<tr><td>Real maps already have defects</td><td>Judge compares before vs after</td></tr>
+<tr><td>Request is vague</td><td>Ask the user instead of guessing</td></tr>
+</table>
+<p>That is the whole design. The pipeline is only these things put in the order a request meets them.</p></div>
 <p class="foot">Longer version with diagrams: <a href="details.html">details.html</a>.</p>
 </main>
 </body>
