@@ -3,707 +3,146 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Geometry-Aware Map Editing, explained from first principles</title>
+<title>The big picture on one page</title>
 <style>
-:root{
-  --bg:#faf8f4; --paper:#ffffff; --ink:#1d2330; --muted:#5d6678; --rule:#ddd8cc;
-  --model:#b4531f; --model-bg:#fbeee4;
-  --code:#1f5f8b;  --code-bg:#e6f0f8;
-  --good:#2d7a4b;  --good-bg:#e5f3ea;
-  --bad:#a62e2e;   --bad-bg:#f8e7e7;
-  --warn:#8a6a10;  --warn-bg:#f8f0d6;
-  --road:#d9d5cc;  --lane:#c9c4b8;
-}
+:root{--bg:#faf8f4;--ink:#1d2330;--muted:#5d6678;--rule:#ddd8cc;--m:#b4531f;--c:#1f5f8b}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1240px;margin:0 auto}
-nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:28px 18px;border-right:1px solid var(--rule);font-size:14px}
-nav h2{font:600 12px/1 ui-sans-serif,system-ui;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
-nav a{display:block;color:var(--ink);text-decoration:none;padding:6px 8px;border-radius:6px}
-nav a:hover{background:#efeadf}
-nav a.sub{padding-left:22px;color:var(--muted);font-size:13px}
-main{padding:40px 48px 120px;max-width:900px}
-h1{font:700 40px/1.15 Charter,"Iowan Old Style",Georgia,serif;margin:0 0 12px}
-h2{font:700 29px/1.25 Charter,"Iowan Old Style",Georgia,serif;margin:64px 0 10px;padding-top:18px;border-top:1px solid var(--rule)}
-h3{font:700 20px/1.3 Charter,Georgia,serif;margin:34px 0 6px}
-p{margin:12px 0}
-.lede{font-size:19px;color:#333b4d}
-.kicker{font:600 12px/1 ui-sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-code,.mono{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#f0ece1;padding:1px 5px;border-radius:4px}
-pre{font:13.5px/1.55 ui-monospace,Menlo,Consolas,monospace;background:#1f2430;color:#e8e6df;padding:16px 18px;border-radius:8px;overflow:auto}
-.box{border:1px solid var(--rule);background:var(--paper);border-radius:10px;padding:14px 18px;margin:18px 0}
-.box.model{background:var(--model-bg);border-color:#e7c9b3}
-.box.code{background:var(--code-bg);border-color:#bcd5e8}
-.box.good{background:var(--good-bg);border-color:#bddfc8}
-.box.bad{background:var(--bad-bg);border-color:#e6bcbc}
-.box.warn{background:var(--warn-bg);border-color:#e6d79c}
-.box .t{font:700 12px/1 ui-sans-serif;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;display:block}
-.model .t{color:var(--model)}.code .t{color:var(--code)}.good .t{color:var(--good)}.bad .t{color:var(--bad)}.warn .t{color:var(--warn)}
-figure{margin:24px 0;background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:14px}
-figure svg{width:100%;height:auto;display:block}
-figcaption{font-size:14px;color:var(--muted);margin-top:8px}
-table{border-collapse:collapse;width:100%;margin:16px 0;font-size:15px;background:var(--paper)}
-th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
-th{background:#efeadf;font-weight:600}
-.pill{display:inline-block;font:600 12px/1 ui-sans-serif;padding:3px 8px;border-radius:99px;margin-right:4px}
-.pm{background:var(--model-bg);color:var(--model)}.pc{background:var(--code-bg);color:var(--code)}
-ul,ol{padding-left:22px}li{margin:5px 0}
-.step{display:grid;grid-template-columns:64px 1fr;gap:14px;margin:14px 0;padding:14px;background:var(--paper);border:1px solid var(--rule);border-radius:10px}
-.step .n{font:700 13px/1.2 ui-sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-/* svg */
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:960px;margin:0 auto;padding:36px 22px 90px}
+h1{font:700 34px/1.2 Charter,Georgia,serif;margin:0 0 6px}
+h2{font:700 22px/1.3 Charter,Georgia,serif;margin:44px 0 10px}
+p{margin:8px 0}
+.sub{color:var(--muted);font-size:18px}
+figure{margin:18px 0;background:#fff;border:1px solid var(--rule);border-radius:10px;padding:10px}
+svg{width:100%;height:auto;display:block}
 svg text{font:13px ui-sans-serif,system-ui,sans-serif;fill:#1d2330}
-svg .s{font-size:11.5px;fill:#5d6678}
-svg .b{font-weight:700}
-svg .w{fill:#fff}
-svg .m{fill:#b4531f}svg .c{fill:#1f5f8b}
-svg .box-m{fill:#fbeee4;stroke:#b4531f;stroke-width:1.5}
-svg .box-c{fill:#e6f0f8;stroke:#1f5f8b;stroke-width:1.5}
-svg .box-n{fill:#fff;stroke:#9a9484;stroke-width:1.2}
-svg .box-g{fill:#e5f3ea;stroke:#2d7a4b;stroke-width:1.5}
-svg .box-r{fill:#f8e7e7;stroke:#a62e2e;stroke-width:1.5}
+svg .b{font-weight:700}svg .s{font-size:11.5px;fill:#5d6678}svg .m{fill:#b4531f}svg .c{fill:#1f5f8b}
+svg .bm{fill:#fbeee4;stroke:#b4531f;stroke-width:1.6}
+svg .bc{fill:#e6f0f8;stroke:#1f5f8b;stroke-width:1.6}
+svg .bn{fill:#fff;stroke:#9a9484;stroke-width:1.3}
 svg .ln{stroke:#1d2330;stroke-width:1.5;fill:none}
-svg .lm{stroke:#b4531f;stroke-width:2;fill:none}
-svg .lc{stroke:#1f5f8b;stroke-width:2;fill:none}
-svg .road{fill:#d9d5cc;stroke:#9a9484}
-svg .lane{fill:#cfcabd;stroke:#9a9484}
-svg .dash{stroke-dasharray:5 4}
-@media (max-width:900px){.layout{grid-template-columns:1fr}nav{position:static;height:auto;border:0}main{padding:24px 18px 80px}}
-@media print{nav{display:none}.layout{display:block}}
+svg .lr{stroke:#a62e2e;stroke-width:1.5;fill:none;stroke-dasharray:5 4}
+svg .lg{stroke:#2d7a4b;stroke-width:1.5;fill:none;stroke-dasharray:5 4}
+svg .lq{stroke:#1f5f8b;stroke-width:1.5;fill:none;stroke-dasharray:2 3}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:15.5px}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#efeadf}
+.tag{display:inline-block;font:700 12px/1 ui-sans-serif;padding:3px 7px;border-radius:5px;margin:1px 2px 1px 0;background:#e6f0f8;color:#1f5f8b}
+.tag.m{background:#fbeee4;color:#b4531f}
+.tag.n{background:#eee;color:#444}
+.req{background:#fff;border:1px solid var(--rule);border-radius:10px;padding:12px 16px;margin:14px 0}
+.why li{margin:7px 0}
+a{color:var(--c)}
+.foot{margin-top:50px;color:var(--muted);font-size:14px}
 </style>
 </head>
 <body>
-<div class="layout">
-<nav>
-  <h2>Contents</h2>
-  <a href="#start">0. How to read this</a>
-  <a href="#domain">1. OpenDRIVE in five minutes</a>
-  <a href="#idea">2. The one idea</a>
-  <a href="#premises">3. Four premises (P1–P4)</a>
-  <a href="#ir">4. The internal map (L1) and R1–R5</a>
-  <a class="sub" href="#steps">Your IR steps ↔ R1–R5</a>
-  <a href="#families">5. Five relation families (F1–F5)</a>
-  <a href="#layers">6. Six layers (L0–L5)</a>
-  <a href="#encoding">7. Encodings (E1–E4)</a>
-  <a href="#levels">8. Data, evaluation, levels (C0–C6)</a>
-  <a href="#limits">9. Limits</a>
-  <a href="#e2e">10. End to end: one request</a>
-  <a href="#yours">11. Your pipeline on this map</a>
-  <a href="#cheat">12. Cheat sheet</a>
-</nav>
 <main>
+<h1>The big picture on one page</h1>
+<p class="sub">A model decides <b>what</b>. Code decides <b>every number</b> and <b>every verdict</b>. Below: where each letter sits in the flow, and what happens to one request.</p>
 
-<section id="start">
-<div class="kicker">Explainer for Tayyab · based on “Geometry-Aware Map Editing Architecture.pdf”</div>
-<h1>Geometry-Aware Map Editing, explained from first principles</h1>
-<p class="lede">The stakeholder document is a list of letters: P, R, F, L, E, C. Each letter is the answer to one problem, and the problems come one after the other. This page walks that chain so every piece lands in a place, and ends with one request followed through all of it with real numbers.</p>
-<div class="box warn"><span class="t">What this page is, and is not</span>
-It explains <b>what the framework asks for and why</b>. It is not the GREM-4 design and it is not a build plan. Where I give my own opinion rather than the document’s, it is marked <b>[my reading]</b>. Numbers in the examples were computed, but the example map is invented. Check geometry rules against the ASAM OpenDRIVE 1.9.0 spec before relying on them.</div>
-<p><b>Colour code.</b> <span class="pill pm">model</span> = what a language model is good at (meaning, choosing, referring). <span class="pill pc">code</span> = what deterministic code does (exact numbers, checks, decisions). That split is the whole document.</p>
-</section>
-
-<section id="domain">
-<h2>1. OpenDRIVE in five minutes (just what you need)</h2>
-<p>You know the XML. This is the geometric meaning behind the tags, in the five ideas the framework relies on.</p>
-
+<h2>1. The flow, with every letter placed</h2>
 <figure>
-<svg viewBox="0 0 860 330" role="img" aria-label="Reference line with s along and t across">
-  <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d2330"/></marker></defs>
-  <!-- road strips -->
-  <rect x="60" y="95" width="720" height="40" class="lane"/>
-  <rect x="60" y="135" width="720" height="40" class="lane"/>
-  <rect x="60" y="55" width="720" height="40" class="lane"/>
-  <line x1="60" y1="135" x2="780" y2="135" class="lm" stroke-width="3"/>
-  <text x="790" y="139" class="b m">reference line</text>
-  <text x="70" y="80" class="s">lane 1 (left, positive id)</text>
-  <text x="70" y="120" class="s">lane −1 (right, negative id)</text>
-  <text x="70" y="160" class="s">lane −2</text>
-  <!-- s axis -->
-  <line x1="60" y1="205" x2="780" y2="205" class="ln" marker-end="url(#ah)"/>
-  <text x="785" y="209" class="b">s  (distance along)</text>
-  <line x1="60" y1="198" x2="60" y2="212" class="ln"/><text x="52" y="228" class="s">s = 0</text>
-  <!-- point -->
-  <line x1="470" y1="135" x2="470" y2="248" class="lc dash"/>
-  <circle cx="470" cy="248" r="6" fill="#1f5f8b"/>
-  <text x="482" y="252" class="b c">a point at (s, t): s = distance along, t = sideways</text>
-  <line x1="420" y1="136" x2="420" y2="247" class="ln" marker-end="url(#ah)" stroke="#1f5f8b"/>
-  <text x="426" y="190" class="s c">t</text>
-  <text x="300" y="300" class="s">t = sideways offset from the reference line. Left is positive, right is negative.</text>
-  <text x="60" y="318" class="s">Road units are metres. The reference line is the road’s spine; every lane and object is placed relative to it.</text>
+<svg viewBox="0 0 900 650" role="img" aria-label="Master flow">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d2330"/></marker>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#a62e2e"/></marker>
+<marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2d7a4b"/></marker>
+<marker id="aq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f5f8b"/></marker></defs>
+
+<rect x="250" y="10" width="400" height="38" rx="8" class="bn"/>
+<text x="450" y="34" text-anchor="middle" class="b">Map file  (OpenDRIVE now · Lanelet2, HERE later)</text>
+
+<rect x="250" y="68" width="400" height="44" rx="8" class="bc"/>
+<text x="450" y="88" text-anchor="middle" class="b c">L0  DOOR IN</text><text x="450" y="104" text-anchor="middle" class="s">reads the file into the IR. Adds no meaning.</text>
+
+<rect x="250" y="132" width="400" height="96" rx="8" class="bc"/>
+<text x="450" y="152" text-anchor="middle" class="b c">L1  IR  (the one internal map)</text>
+<text x="450" y="172" text-anchor="middle" class="s">R1 permanent IDs  ·  R2 links as edges  ·  R3 shape stored twice</text>
+<text x="450" y="190" text-anchor="middle" class="s">R4 every value has a start and end  ·  R5 who said it</text>
+<text x="450" y="216" text-anchor="middle" class="s">Fixes: formats store recipes and meaning-by-position (P4)</text>
+
+<rect x="250" y="248" width="400" height="86" rx="8" class="bc"/>
+<text x="450" y="268" text-anchor="middle" class="b c">L2  RELATION ENGINE  (exact answers)</text>
+<text x="450" y="288" text-anchor="middle" class="s">F1 inside / overlapping?   F2 which stretch?   F3 which lane, in what order?</text>
+<text x="450" y="306" text-anchor="middle" class="s">F4 which direction?   F5 does the join have a gap or kink?</text>
+<text x="450" y="324" text-anchor="middle" class="s">One code, used by the model, the authority, training and scoring</text>
+
+<rect x="250" y="354" width="400" height="44" rx="8" class="bn"/>
+<text x="450" y="374" text-anchor="middle" class="b">L3  MODEL VIEW  (E1–E4)</text><text x="450" y="390" text-anchor="middle" class="s">small local graph. Numbers shown as references, not literals.</text>
+
+<rect x="250" y="418" width="400" height="58" rx="8" class="bm"/>
+<text x="450" y="438" text-anchor="middle" class="b m">L4  MODEL  (LLM now, foundation model later)</text>
+<text x="450" y="456" text-anchor="middle" class="s">understands the request · asks L2 · writes “use result Q2”</text>
+<text x="450" y="470" text-anchor="middle" class="s">Never writes a number.</text>
+
+<rect x="250" y="496" width="400" height="76" rx="8" class="bc"/>
+<text x="450" y="516" text-anchor="middle" class="b c">L5  AUTHORITY  (decides)</text>
+<text x="450" y="536" text-anchor="middle" class="s">applies the edit to a copy · re-asks F1–F5 · compares before vs after</text>
+<text x="450" y="554" text-anchor="middle" class="s">only NEW problems count · commit or revert</text>
+
+<rect x="250" y="592" width="400" height="44" rx="8" class="bc"/>
+<text x="450" y="612" text-anchor="middle" class="b c">L0  DOOR OUT</text><text x="450" y="628" text-anchor="middle" class="s">writes the file. Everything unchanged keeps its bytes.</text>
+
+<path d="M450 48 V68 M450 112 V132 M450 228 V248 M450 334 V354 M450 398 V418 M450 476 V496 M450 572 V592" class="ln" marker-end="url(#a)"/>
+
+<!-- L4 asks L2 -->
+<path d="M650 440 H700 V290 H650" class="lq" marker-end="url(#aq)"/>
+<text x="706" y="370" class="s c" transform="rotate(90 706 370)">L4 asks L2</text>
+<!-- L5 checks with L2 -->
+<path d="M650 534 H770 V310 H650" class="lq" marker-end="url(#aq)"/>
+<text x="778" y="420" class="s c" transform="rotate(90 778 420)">L5 re-checks with L2</text>
+
+<!-- return paths -->
+<path d="M250 534 H190 V446 H250" class="lr" marker-end="url(#ar)"/>
+<text x="20" y="480" class="s" style="fill:#a62e2e">rejected, or made the</text><text x="20" y="494" class="s" style="fill:#a62e2e">map worse → L4 retries</text>
+<path d="M250 428 H110 V300" class="lg" marker-end="url(#ag)"/>
+<text x="20" y="170" class="s" style="fill:#2d7a4b">too vague →</text><text x="20" y="184" class="s" style="fill:#2d7a4b">ask the user.</text><text x="20" y="198" class="s" style="fill:#2d7a4b">Nothing is changed.</text>
+<text x="20" y="212" class="s" style="fill:#2d7a4b">This is a good result.</text>
 </svg>
-<figcaption>Figure 1. Everything in OpenDRIVE is located by (s, t) relative to a road’s reference line.</figcaption>
+<figcaption class="s" style="font-size:14px;color:#5d6678">Blue = code. Orange = model. Only one box is the model.</figcaption>
 </figure>
 
-<ol>
-<li><b>Reference line.</b> Each road has one curve (the spine). It is built from pieces (<code>&lt;geometry&gt;</code>): line, arc, spiral, poly3, paramPoly3. Each piece stores a start s, start x, y, heading, and a length.</li>
-<li><b>s and t.</b> A position on the road is (s, t): s = distance along the spine, t = sideways offset (left positive). Converting (s, t) to world x, y needs the geometry maths. <i>Worked example:</i> an arc with curvature k = 0.01 (radius 100 m), starting at (0, 0) heading 0. At s = 50 the heading is k·s = 0.5 rad = 28.65°, the spine point is x = sin(0.5)/0.01 = 47.943, y = (1 − cos 0.5)/0.01 = 12.242. A point 4 m to the right (t = −4) is displaced along the left normal (−sin h, cos h), giving x = 49.860, y = 8.731.</li>
-<li><b>Lanes.</b> Lanes are numbered outward from the centre: right side −1, −2, …, left side 1, 2, …; lane 0 is the centre line (a marker, not a driving lane). A lane’s width is not stored as one number. It is a cubic: <code>w(ds) = a + b·ds + c·ds² + d·ds³</code> starting at a given offset.</li>
-<li><b>Lane sections.</b> A road is cut into lane sections (along s). Inside a section the lanes are fixed; at a new section the lane count can change. Lanes in neighbouring sections are connected by <code>&lt;link&gt;</code>.</li>
-<li><b>Objects, signals, junctions.</b> Signals and objects are things placed at (s, t). Roads connect to other roads, directly (predecessor/successor) or via junctions.</li>
-</ol>
-<div class="box"><span class="t">Hold this thought</span>
-Nearly every number in a file is a <b>generating parameter</b>, not a value you can read. You cannot see a lane’s width at s = 137 without evaluating a cubic that starts somewhere else. This is the root of premise P4.</div>
-</section>
-
-<section id="idea">
-<h2>2. The one idea behind the whole document</h2>
-<p>Everything in the document follows from one observation:</p>
-<div class="box model"><span class="t">A language model is good at</span>
-Meaning. “Signal 55” → which signal. “Before the junction” → which end of the road, which side. “Add some signs” → this is too vague, ask.</div>
-<div class="box code"><span class="t">A language model is bad at</span>
-Exact values. It will write 190.002 when the answer is 190.0, or a coefficient that is right to three decimals and wrong at the fourth. <b>Plausible-wrong survives review</b> far better than obviously-wrong, which is what makes it dangerous.</div>
-
-<figure>
-<svg viewBox="0 0 860 250" role="img" aria-label="Model chooses and refers, code computes and decides">
-  <rect x="20" y="40" width="250" height="150" rx="10" class="box-m"/>
-  <text x="145" y="68" text-anchor="middle" class="b m">MODEL (proposes)</text>
-  <text x="145" y="96" text-anchor="middle">understands the request</text>
-  <text x="145" y="116" text-anchor="middle">picks the entity</text>
-  <text x="145" y="136" text-anchor="middle">asks questions about the map</text>
-  <text x="145" y="156" text-anchor="middle">writes: “s = result of Q2”</text>
-  <text x="145" y="176" text-anchor="middle" class="b">never writes a number</text>
-
-  <rect x="305" y="40" width="250" height="150" rx="10" class="box-n"/>
-  <text x="430" y="68" text-anchor="middle" class="b">RELATION ENGINE</text>
-  <text x="430" y="96" text-anchor="middle">answers exactly:</text>
-  <text x="430" y="116" text-anchor="middle">“where does road 8 end?”</text>
-  <text x="430" y="136" text-anchor="middle">“is this inside a lane?”</text>
-  <text x="430" y="156" text-anchor="middle">“is this join smooth?”</text>
-  <text x="430" y="176" text-anchor="middle" class="s">same code for all consumers</text>
-
-  <rect x="590" y="40" width="250" height="150" rx="10" class="box-c"/>
-  <text x="715" y="68" text-anchor="middle" class="b c">AUTHORITY (decides)</text>
-  <text x="715" y="96" text-anchor="middle">applies edit to a copy</text>
-  <text x="715" y="116" text-anchor="middle">checks rules before vs after</text>
-  <text x="715" y="136" text-anchor="middle">commit or revert</text>
-  <text x="715" y="156" text-anchor="middle">fills in every value</text>
-  <text x="715" y="176" text-anchor="middle" class="b">final and total</text>
-
-  <path d="M270 105 H305" class="ln" marker-end="url(#ah2)"/>
-  <path d="M305 135 H270" class="ln" marker-end="url(#ah2)"/>
-  <path d="M555 115 H590" class="ln" marker-end="url(#ah2)"/>
-  <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1d2330"/></marker></defs>
-  <text x="430" y="225" text-anchor="middle" class="s">The model can be wrong about meaning. It cannot put a wrong number into the map.</text>
-</svg>
-<figcaption>Figure 2. The core split. The document calls it separating <i>competence</i> from <i>authority</i>.</figcaption>
-</figure>
-
-<p>The document states it as a single hard rule:</p>
-<div class="box good"><span class="t">The invariant</span>
-No value that reaches the map originates in the model. Coordinates, coefficients, lengths and positions come from deterministic computation. The model <b>selects, references and composes</b> them.</div>
-<p>The rest of the document asks: <i>what must the system look like so that this works?</i> The answer needs (a) a representation where relations are explicit (R), (b) a fixed list of geometric questions with exact answers (F), (c) layers that keep proposing and deciding apart (L), (d) a way to show the map to the model so it learns relations and not syntax (E), and (e) a way to measure and a safe order to grow (C).</p>
-
-<h3>A compiler is the closest analogy</h3>
-<figure>
-<svg viewBox="0 0 860 220" role="img" aria-label="Compiler analogy">
-  <rect x="20" y="30" width="150" height="38" rx="6" class="box-n"/><text x="95" y="54" text-anchor="middle">OpenDRIVE file</text>
-  <rect x="20" y="78" width="150" height="38" rx="6" class="box-n"/><text x="95" y="102" text-anchor="middle">Lanelet2 file</text>
-  <rect x="20" y="126" width="150" height="38" rx="6" class="box-n"/><text x="95" y="150" text-anchor="middle">HERE tiles</text>
-  <text x="95" y="188" text-anchor="middle" class="s">like C, Rust, Swift source</text>
-  <path d="M170 49 L250 90 M170 97 H250 M170 145 L250 105" class="ln"/>
-  <text x="205" y="30" class="s b" text-anchor="middle">doors</text>
-  <rect x="250" y="60" width="170" height="70" rx="8" class="box-c"/>
-  <text x="335" y="90" text-anchor="middle" class="b c">IR</text><text x="335" y="110" text-anchor="middle" class="s">one internal map</text>
-  <text x="335" y="188" text-anchor="middle" class="s">like LLVM IR</text>
-  <rect x="450" y="60" width="150" height="70" rx="8" class="box-n"/>
-  <text x="525" y="90" text-anchor="middle" class="b">analyses</text><text x="525" y="110" text-anchor="middle" class="s">relation engine, rules</text>
-  <path d="M420 95 H450" class="ln"/>
-  <path d="M600 95 H640" class="ln"/>
-  <rect x="640" y="30" width="150" height="38" rx="6" class="box-n"/><text x="715" y="54" text-anchor="middle">OpenDRIVE out</text>
-  <rect x="640" y="78" width="150" height="38" rx="6" class="box-n"/><text x="715" y="102" text-anchor="middle">Lanelet2 out</text>
-  <rect x="640" y="126" width="150" height="38" rx="6" class="box-n"/><text x="715" y="150" text-anchor="middle">HERE out</text>
-  <text x="715" y="188" text-anchor="middle" class="s">back ends</text>
-  <path d="M600 95 L640 49 M600 95 L640 97 M600 95 L640 145" class="ln"/>
-  <text x="430" y="212" text-anchor="middle" class="s">One optimiser serves every source language. One relation engine serves every map format. The model sits next to the IR, not inside any format.</text>
-</svg>
-<figcaption>Figure 3. Doors in, one IR, doors out. In the document these doors are the “codecs” of layer L0.</figcaption>
-</figure>
-</section>
-
-<section id="premises">
-<h2>3. The four premises: why map editing is hard</h2>
-<p>The document says a system that rejects any of these is outside its scope. Each premise creates a requirement.</p>
-
-<h3>P1. A map is a constrained artefact, not a document</h3>
-<p>A map is valid only if rules hold: roads join without gaps, every reference points to something that exists, lane numbers follow convention, values stay in range. An edit is correct only if the map stays valid. That makes editing <b>constraint satisfaction dressed as text editing</b>.</p>
-<p><b>Requirement it creates:</b> something that checks the rules after every edit (this becomes the authority, L5).</p>
-
-<h3>P2. Competence and authority are separable, and must be separated</h3>
-<p>“Can propose a good edit” and “can guarantee it is valid” are different abilities. Models have the first and not the second. A system that mixes them inherits the weaknesses of both. A system that separates them can improve the proposer forever without ever weakening the guarantee.</p>
-<p><b>Requirement:</b> two roles with a hard wall between them (L4 proposes, L5 decides).</p>
-
-<h3>P3. Competence here is relational, not lexical</h3>
-<p>Understanding a map means holding relations: what is beside what, what overlaps what along which axis, what continues into what. Remembering the XML tag names is not understanding. A model that only memorised the schema writes well-formed nonsense. A model that holds relations can propose something meaningful even in a format it has not seen.</p>
-<p><b>Requirement:</b> say exactly which relations count. That list is the F vocabulary (section 5).</p>
-
-<h3>P4. Storage formats are built for delivery, not editing</h3>
-<p>Formats store <b>generating parameters</b> instead of values, and carry <b>meaning by position</b>, with records implicitly valid “until the next one begins”. Three concrete OpenDRIVE consequences:</p>
-
-<figure>
-<svg viewBox="0 0 860 330" role="img" aria-label="Three P4 problems">
-  <!-- renumber -->
-  <text x="20" y="22" class="b">(a) Meaning by position: lane ids renumber</text>
-  <g transform="translate(20,34)">
-    <rect x="0"   y="0" width="110" height="34" class="lane"/><text x="55" y="22" text-anchor="middle">−1</text>
-    <rect x="110" y="0" width="110" height="34" class="lane"/><text x="165" y="22" text-anchor="middle">−2</text>
-    <rect x="220" y="0" width="110" height="34" class="lane"/><text x="275" y="22" text-anchor="middle">−3</text>
-    <text x="0" y="56" class="s">before: a signal’s validity says “lane −3”</text>
-  </g>
-  <path d="M370 52 H420" class="ln" marker-end="url(#ah2)"/>
-  <text x="395" y="44" text-anchor="middle" class="s">insert lane</text>
-  <g transform="translate(440,34)">
-    <rect x="0"   y="0" width="85" height="34" class="lane"/><text x="42" y="22" text-anchor="middle">−1</text>
-    <rect x="85"  y="0" width="85" height="34" class="box-g"/><text x="127" y="22" text-anchor="middle">−2 new</text>
-    <rect x="170" y="0" width="85" height="34" class="lane"/><text x="212" y="22" text-anchor="middle">−3 (was −2)</text>
-    <rect x="255" y="0" width="85" height="34" class="lane"/><text x="297" y="22" text-anchor="middle">−4 (was −3)</text>
-    <text x="0" y="56" class="s">after: the signal still says “lane −3”, which is now a different lane</text>
-  </g>
-  <!-- extents -->
-  <text x="20" y="130" class="b">(b) Implicit extents: “valid until the next record”</text>
-  <line x1="40" y1="180" x2="820" y2="180" class="ln"/>
-  <circle cx="40" cy="180" r="6" class="box-c"/><circle cx="330" cy="180" r="6" class="box-c"/><circle cx="640" cy="180" r="6" class="box-c"/>
-  <text x="40" y="206" text-anchor="middle" class="s">record at s=0</text><text x="330" y="206" text-anchor="middle" class="s">record at s=100</text><text x="640" y="206" text-anchor="middle" class="s">record at s=180</text>
-  <path d="M46 165 H324" class="lc"/><path d="M336 165 H634" class="lc"/><path d="M646 165 H810" class="lc"/>
-  <text x="185" y="156" text-anchor="middle" class="s c">holds…</text><text x="485" y="156" text-anchor="middle" class="s c">holds…</text><text x="728" y="156" text-anchor="middle" class="s c">holds…</text>
-  <text x="20" y="232" class="s">The file never says where a record ends. Inserting a record at s=140 silently shortens the middle one and changes what the s=180 record continues from.</text>
-  <!-- coefficients -->
-  <text x="20" y="268" class="b">(c) Coefficients are not values</text>
-  <rect x="20" y="278" width="820" height="38" rx="6" class="box-n"/>
-  <text x="30" y="302" class="mono">width a=3.0 b=0.02 c=0.001 d=0   →  to read the width at s=137 you must know where this record started and evaluate the cubic</text>
-</svg>
-<figcaption>Figure 4. Three ways the file layout fights editing.</figcaption>
-</figure>
-
-<p>Why (b) matters concretely. Take a width cubic <code>a=3.0, b=0.02, c=0.001</code> that starts at s = 0. Split it at s = 10 so a new record starts there. The correct new record is <b>re-based</b>: <code>a′ = a + b·h + c·h² = 3.3</code>, <code>b′ = b + 2c·h = 0.04</code>, <code>c′ = 0.001</code> (h = 10). At 15 m into the new record the width is 4.125 m, the same as the original at s = 25. If you only <i>copy</i> the old record, you get 3.525 m, which is 0.6 m wrong. The old GREM pipeline made exactly this class of mistake: a lane width at s = 140 became 0 instead of 2.9553 after a lane-section split.</p>
-<p><b>Requirement:</b> keep the thing you reason and edit in <i>separate</i> from the thing you read and write. Formats become codecs at the edge. The middle is the IR (next section).</p>
-</section>
-
-<section id="ir">
-<h2>4. The internal map (layer L1) and its five requirements R1–R5</h2>
-<p>The document defines the internal map by <b>requirements</b>, not by a schema, so you can build it in any technology and check it against the list. Each requirement removes one P4 problem.</p>
-
+<h2>2. Follow one request through it</h2>
+<div class="req"><b>“Move signal 55 to 10 m before the junction.”</b> Road 8 is 200 m long. Signal 55 is at s = 60.</div>
 <table>
-<tr><th>Req.</th><th>It says</th><th>Problem it fixes</th><th>Concrete example</th></tr>
-<tr><td><b>R1</b> Stable identity</td><td>Every entity has an ID that survives renumbering, splitting, merging and round trips. Edits name entities; a structural path (“road 8, section 1, lane −3”) is only a derived view.</td><td>Figure 4a: references break when a lane is inserted.</td><td>The signal points at the lane’s permanent ID, not at “−3”. After the insert it still points at the same physical lane.</td></tr>
-<tr><td><b>R2</b> Relations as typed edges</td><td>Connectivity, “applies to”, containment, continuity are stored as a graph, not rediscovered by scanning.</td><td>Consequence analysis was special-case code per element; dangling references were found late.</td><td>“What depends on lane X?” is a graph walk. A reference to a deleted lane is an unsatisfied edge you can list.</td></tr>
-<tr><td><b>R3</b> Dual geometry</td><td>Every shape is held twice, synchronised. <b>Generative</b> = the file’s recipe, authoritative for writing. <b>Resolved</b> = sampled points in a local frame, authoritative for reasoning and for the model.</td><td>Coefficients mean nothing; geometry predicates are awkward on formulas.</td><td>The cubic is kept for export; the polyline is what “inside/beside/ahead” is computed on.</td></tr>
-<tr><td><b>R4</b> Explicit extents</td><td>Every value-carrying record states the interval it holds on.</td><td>Figure 4b: implicit “until the next record”.</td><td>Splitting is interval arithmetic: close one interval, open another, rebase the cubic.</td></tr>
-<tr><td><b>R5</b> Provenance and confidence</td><td>Every attribute records who asserted it, from what source, how certain.</td><td>You cannot merge observed data with authored data, or prove a value did not come from the model.</td><td>“s = 190.0, origin: computed by Q2 from road end − user’s 10 m”.</td></tr>
+<tr><th>#</th><th>Where</th><th>What happens</th></tr>
+<tr><td>1</td><td><span class="tag">L0</span><span class="tag">L1</span></td><td>File becomes the IR. Signal 55, road 8 and junction J1 get permanent IDs (R1) and are linked (R2).</td></tr>
+<tr><td>2</td><td><span class="tag">L3</span></td><td>Model is shown a small graph around signal 55, not the whole file.</td></tr>
+<tr><td>3</td><td><span class="tag m">L4</span><span class="tag">L2</span></td><td>Model: “which junction touches road 8?” Engine: J1, at the end. So the request is clear.</td></tr>
+<tr><td>4</td><td><span class="tag">L2</span></td><td>Engine computes <code>Q1 = end of road 8 = 200.0</code> and <code>Q2 = Q1 − 10 = 190.0</code>. The 10 comes from the user. The model computed nothing.</td></tr>
+<tr><td>5</td><td><span class="tag m">L4</span></td><td>Model writes: <code>set signal 55 s = Q2</code>. A reference, not a number.</td></tr>
+<tr><td>6</td><td><span class="tag">L5</span><span class="tag">L2</span></td><td>Copy of the map gets the edit. Checks: s inside 0–200 (F2), signal not in a driving lane (F1), nothing else touched, no new rule problems.</td></tr>
+<tr><td>7</td><td><span class="tag">L5</span><span class="tag">L0</span></td><td>Commit. File written; only that one value changed. Re-read to prove it.</td></tr>
 </table>
 
-<figure>
-<svg viewBox="0 0 860 280" role="img" aria-label="Dual geometry">
-  <rect x="30" y="40" width="330" height="150" rx="10" class="box-n"/>
-  <text x="195" y="66" text-anchor="middle" class="b">GENERATIVE (the recipe)</text>
-  <text x="50" y="96" class="mono">type: arc</text>
-  <text x="50" y="118" class="mono">s0=0  x0=0  y0=0  hdg=0</text>
-  <text x="50" y="140" class="mono">length=80  curvature=0.01</text>
-  <text x="50" y="170" class="s">used to WRITE the file back (exact)</text>
-  <rect x="500" y="40" width="330" height="150" rx="10" class="box-n"/>
-  <text x="665" y="66" text-anchor="middle" class="b">RESOLVED (sampled)</text>
-  <path d="M520 160 Q640 160 810 80" class="lc"/>
-  <g class="c"><circle cx="520" cy="160" r="3"/><circle cx="580" cy="160" r="3"/><circle cx="640" cy="152" r="3"/><circle cx="700" cy="136" r="3"/><circle cx="760" cy="110" r="3"/><circle cx="810" cy="80" r="3"/></g>
-  <text x="665" y="182" text-anchor="middle" class="s">used to REASON and shown to the model</text>
-  <path d="M360 100 H500" class="ln" marker-end="url(#ah2)"/><text x="430" y="92" text-anchor="middle" class="s">evaluate</text>
-  <path d="M500 140 H360" class="ln dash" marker-end="url(#ah2)"/><text x="430" y="158" text-anchor="middle" class="s">kept in sync</text>
-  <text x="430" y="238" text-anchor="middle" class="s">The document calls this “the single highest-leverage requirement”: reason in one form, deliver in another.</text>
-</svg>
-<figcaption>Figure 5. R3, dual geometry.</figcaption>
-</figure>
-
-<h3>Why the IR must not be OpenDRIVE with a new name</h3>
-<p>The document warns: borrowing a format’s <b>ontology</b> (entity types, valid values, rules) is sound. Adopting its <b>storage layout</b> as the editing substrate brings P4 straight back. A representation validated against only one format absorbs that format’s assumptions without anyone noticing. The cheapest test of whether R1–R5 were met in substance is to add a second format with a different philosophy.</p>
-<div class="box bad"><span class="t">[my reading] Where OpenDRIVE leaks easily</span>
-OpenDRIVE is road-centric: a spine plus lane widths measured from it. Lanelet2 and HERE are boundary-centric: lanes are strips between shared boundary lines, and “s” and “t” do not exist. If the IR stores “reference line + t offsets” as its core, it has already become OpenDRIVE. A safer core is <b>boundaries as first-class entities</b> with lanes referencing them; the OpenDRIVE door derives boundaries from the widths, and a Lanelet2 door reads them directly. The road ruler (s, t) can then be an optional, derived frame for formats that have one.</div>
-
-<h3 id="steps">How your nine IR steps line up with R1–R5</h3>
+<h2>3. What goes wrong, and which arrow it takes</h2>
 <table>
-<tr><th>Your step</th><th>Which requirement or need it serves</th><th>Why it exists</th></tr>
-<tr><td>1 Revision</td><td>Preservation, <i>and</i> the document’s “formats are codecs” (L0)</td><td>Prove exactly what you started from (hash, version). Lets a no-op export return identical bytes.</td></tr>
-<tr><td>2 Frame</td><td>Supports F4 and F5, and encoding E1</td><td>Units, axes, coordinate system. Without it “50” has no unit and “heading” has no reference.</td></tr>
-<tr><td>3 Identity</td><td><b>R1</b></td><td>Permanent IDs.</td></tr>
-<tr><td>4 Shapes</td><td><b>R3</b></td><td>Recipe + resolved geometry.</td></tr>
-<tr><td>5 Extents</td><td><b>R4</b></td><td>Explicit intervals.</td></tr>
-<tr><td>6 Links</td><td><b>R2</b></td><td>Typed edges.</td></tr>
-<tr><td>7 Origins</td><td><b>R5</b></td><td>Provenance on every value.</td></tr>
-<tr><td>8 Unknown extras</td><td>Preservation</td><td>What you do not understand is kept raw, never dropped. The old pipeline lost 104 elements and 422 attribute values this way.</td></tr>
-<tr><td>9 Check</td><td>Foundation for L5</td><td>The IR is consistent and round-trips (IR → file → IR is equal).</td></tr>
+<tr><th>Request</th><th>Result</th></tr>
+<tr><td>“Put it at s = 300” (road is 200 m)</td><td><span class="tag">L5</span> rejects (F2) → back to the model → retry or ask.</td></tr>
+<tr><td>“Put it in the right lane”</td><td>Applies, but F1 says it sits in a driving lane. New problem → blocked.</td></tr>
+<tr><td>“Add some signs to make it safer”</td><td>Not answerable. Model asks the user. Map untouched.</td></tr>
 </table>
-<p>The order is a dependency order: you cannot link things (6) before they have identity (3), and you cannot give extents (5) before you know the shapes (4).</p>
-</section>
 
-<section id="families">
-<h2>5. The five relation families F1–F5: what “understanding a map” means</h2>
-<p>The document says “geometric understanding” cannot be trained or tested until it is broken into a <b>closed list of questions</b>. Each family is one kind of question. Each has an exact evaluator in code and a notion of <b>near-miss</b>.</p>
-
-<div class="box">
-<b>Three properties the vocabulary must have</b>
-<ol>
-<li><b>Completeness against the rules.</b> Every normative rule of the standard should be expressible as a question from this list. A rule you cannot express is either a missing question or a genuine boundary, and the boundary must be <i>declared with its reason</i>. An undeclared gap is a false assurance.</li>
-<li><b>A graded distance D(r₁, r₂) per family.</b> Saying “touches” where the truth is “overlaps” is a near-miss; saying “disjoint” is a category error. Without grading you have no loss signal, no useful benchmark and no basis for deciding whether a rejected proposal is worth retrying.</li>
-<li><b>Qualitative versus metric.</b> F1–F4 are qualitative (a finite set of answers): a model can reason in them. F5 is metric (a number and a tolerance): no qualitative training produces it. So the model <i>reasons in F1–F4 and requests F5; it never computes F5</i>.</li>
-</ol></div>
-
-<h3>F1. Topology (the 2D footprint)</h3>
-<p>Predicates: equals, disjoint, touches, crosses, overlaps, contains, within. Governs containment and intersection of <b>areas</b>: is the placed object inside a traversable region? Evaluated with polygon operations on the resolved geometry.</p>
-<figure>
-<svg viewBox="0 0 860 190" role="img" aria-label="F1 topology">
-  <g transform="translate(20,20)"><rect x="0" y="20" width="180" height="70" class="lane"/><rect x="70" y="35" width="26" height="26" fill="#b4531f"/><text x="90" y="115" text-anchor="middle" class="b">within</text><text x="90" y="133" text-anchor="middle" class="s">pole footprint inside the lane</text></g>
-  <g transform="translate(240,20)"><rect x="0" y="20" width="180" height="70" class="lane"/><rect x="160" y="35" width="26" height="26" fill="#b4531f" fill-opacity=".85"/><text x="90" y="115" text-anchor="middle" class="b">overlaps</text><text x="90" y="133" text-anchor="middle" class="s">partly in the lane</text></g>
-  <g transform="translate(460,20)"><rect x="0" y="20" width="180" height="70" class="lane"/><rect x="180" y="35" width="26" height="26" fill="#b4531f"/><text x="90" y="115" text-anchor="middle" class="b">touches</text><text x="90" y="133" text-anchor="middle" class="s">edge-to-edge only</text></g>
-  <g transform="translate(680,20)"><rect x="0" y="20" width="150" height="70" class="lane"/><rect x="170" y="35" width="26" height="26" fill="#b4531f"/><text x="90" y="115" text-anchor="middle" class="b">disjoint</text><text x="90" y="133" text-anchor="middle" class="s">clear of the lane</text></g>
-  <text x="430" y="182" text-anchor="middle" class="s">Near-miss: touches ↔ overlaps are neighbours. Within ↔ disjoint is a category error.</text>
-</svg>
-<figcaption>Figure 6. F1 on a lane and a pole.</figcaption>
-</figure>
-<p><b>Limit:</b> it is 2D. A road on a bridge overlaps the road under it in plan view with no collision. [my reading] The project’s own review notes say vertical overlap is needed from the start.</p>
-
-<h3>F2. Interval (along the longitudinal axis)</h3>
-<p>Predicates (Allen’s interval relations): before, meets, overlaps, starts, during, finishes, equals, and their inverses. Governs the extent of <b>every value-carrying record</b>: lane segments, elevation and banking profiles, validity ranges. Pure interval arithmetic.</p>
-<figure>
-<svg viewBox="0 0 860 210" role="img" aria-label="F2 intervals">
-  <line x1="40" y1="30" x2="820" y2="30" class="ln"/>
-  <text x="40" y="20" class="s">s=0</text><text x="800" y="20" class="s">s=200</text>
-  <rect x="40" y="48" width="390" height="22" class="box-c"/><text x="48" y="64" class="s c">speed limit record: s 0–100</text>
-  <rect x="430" y="48" width="390" height="22" class="box-g"/><text x="438" y="64" class="s">next record: s 100–200 → “meets” the first</text>
-  <rect x="300" y="88" width="300" height="22" class="box-m"/><text x="308" y="104" class="s m">lane taper: s 75–150 → “overlaps” both</text>
-  <rect x="520" y="128" width="100" height="22" class="box-n"/><text x="526" y="144" class="s">sign validity: s 130–150 → “during” the taper</text>
-  <text x="430" y="190" text-anchor="middle" class="s">Question the engine answers: “which records does an edit between s = 140 and 160 touch?” Answer: the second record, the taper, the sign’s validity.</text>
-</svg>
-<figcaption>Figure 7. F2 answers “what is affected by this stretch?” exactly.</figcaption>
-</figure>
-<p>Why it needs R4: with explicit extents these are direct reads. With implicit “until next record”, each is an inference that you must redo and can get wrong.</p>
-
-<h3>F3. Order (across the lateral axis)</h3>
-<p>Predicates: left-of, right-of, immediately-adjacent, outward-from-centre, between, nth-from. Governs lane sequence, renumbering and ordinal reference (“the second lane from the edge”). It is a signed order on the lane index.</p>
-<figure>
-<svg viewBox="0 0 860 150" role="img" aria-label="F3 order">
-  <g transform="translate(60,30)">
-    <rect x="0" y="0" width="120" height="40" class="lane"/><text x="60" y="26" text-anchor="middle">lane 2</text>
-    <rect x="120" y="0" width="120" height="40" class="lane"/><text x="180" y="26" text-anchor="middle">lane 1</text>
-    <rect x="240" y="0" width="14" height="40" fill="#b4531f"/><text x="247" y="62" text-anchor="middle" class="s m">lane 0</text>
-    <rect x="254" y="0" width="120" height="40" class="lane"/><text x="314" y="26" text-anchor="middle">lane −1</text>
-    <rect x="374" y="0" width="120" height="40" class="lane"/><text x="434" y="26" text-anchor="middle">lane −2</text>
-    <rect x="494" y="0" width="120" height="40" class="lane"/><text x="554" y="26" text-anchor="middle">lane −3</text>
-  </g>
-  <text x="60" y="118" class="s">“Second lane from the right edge” → count 1, 2 from the right: lane −2 here. “Between lane 1 and lane −1” → lane 0, a marker, not a driving lane.</text>
-  <text x="60" y="138" class="s">Traps: ordering on a filtered list of lanes is not physical adjacency; renumbering needs an explicit old → new mapping.</text>
-</svg>
-<figcaption>Figure 8. F3 resolves ordinal words like “second from the edge”.</figcaption>
-</figure>
-
-<h3>F4. Direction</h3>
-<p>Predicates: heading-aligned, opposing, facing, turns-left/right, on-the-left/right-side. Governs sign conventions, the orientation of directional furniture and manoeuvre direction. A cone calculus over heading and lateral sign.</p>
-<figure>
-<svg viewBox="0 0 860 190" role="img" aria-label="F4 direction">
-  <rect x="40" y="70" width="780" height="36" class="lane"/>
-  <path d="M60 88 H760" class="ln dash"/>
-  <text x="62" y="62" class="s">+s direction →</text>
-  <path d="M120 130 H230" class="lc" marker-end="url(#ah2)"/><text x="120" y="150" class="s c">traffic on the right lanes travels +s</text>
-  <rect x="380" y="116" width="10" height="26" fill="#b4531f"/>
-  <path d="M385 152 H310" class="lm" marker-end="url(#ah2)"/>
-  <text x="330" y="172" class="s m">a sign valid for +s traffic faces back toward it (−s)</text>
-  <text x="430" y="30" text-anchor="middle" class="b">“Valid in +s” and “faces +s” are different things</text>
-</svg>
-<figcaption>Figure 9. Direction has easy-to-flip conventions. Having one exact evaluator is the point.</figcaption>
-</figure>
-
-<h3>F5. Continuity (the only metric family)</h3>
-<p>G0 position, G1 tangent, G2 curvature, each within a tolerance ε. Governs joins between geometric pieces, between roads and across profiles. Computed by endpoint evaluation and comparison.</p>
-<figure>
-<svg viewBox="0 0 860 220" role="img" aria-label="F5 continuity">
-  <g transform="translate(20,20)">
-    <path d="M10 100 H190" class="lc"/><path d="M210 100 H390" class="lc"/>
-    <circle cx="190" cy="100" r="4" fill="#1f5f8b"/><circle cx="210" cy="100" r="4" fill="#a62e2e"/>
-    <path d="M190 80 V120 M210 80 V120" class="ln dash" stroke-opacity=".4"/>
-    <text x="200" y="145" text-anchor="middle" class="b" style="fill:#a62e2e">G0 fails: gap</text>
-    <text x="200" y="165" text-anchor="middle" class="s">end of piece A ≠ start of piece B</text>
-  </g>
-  <g transform="translate(440,20)">
-    <path d="M10 110 H200" class="lc"/><path d="M200 110 L380 70" class="lc"/>
-    <circle cx="200" cy="110" r="4" fill="#1f5f8b"/>
-    <text x="210" y="145" text-anchor="middle" class="b" style="fill:#a62e2e">G0 ok, G1 fails: kink</text>
-    <text x="210" y="165" text-anchor="middle" class="s">same point, different heading</text>
-  </g>
-  <text x="430" y="205" text-anchor="middle" class="s">Example numbers: a 0.3 m gap, or a 0.05 rad (2.87°) heading jump. Whether either is acceptable depends on ε, which is a domain decision, not an engineering one.</text>
-</svg>
-<figcaption>Figure 10. F5 results are numbers, so the model asks and the code computes.</figcaption>
-</figure>
-
-<h3>Why one vocabulary, one implementation</h3>
-<p>The same F1–F5 code is used four ways. They are listed in the document as the reason the vocabulary is “the central artefact”:</p>
-<table>
-<tr><th>Use</th><th>What it does with F1–F5</th></tr>
-<tr><td>Query interface</td><td>The model asks the engine: “is X inside Y?”, “which lanes lie between?”.</td></tr>
-<tr><td>Admissibility rules</td><td>The authority’s rules are written in F-terms: “no overlap with a drivable lane”, “G0 at this join”.</td></tr>
-<tr><td>Training labels</td><td>Run the engine over many maps to label entity pairs automatically.</td></tr>
-<tr><td>Evaluation scores</td><td>Score a proposal by graded distance D from the engine’s answer.</td></tr>
-</table>
-<p>If each were implemented separately, they would drift apart silently and disagree exactly in the cases that matter. This is a <b>correctness argument</b>, not an efficiency argument.</p>
-</section>
-
-<section id="layers">
-<h2>6. The six layers L0–L5: who does what</h2>
-
-<figure>
-<svg viewBox="0 0 860 470" role="img" aria-label="Six layers">
-  <rect x="150" y="20" width="560" height="52" rx="8" class="box-n"/><text x="430" y="42" text-anchor="middle" class="b">L0 CODECS (doors)</text><text x="430" y="60" text-anchor="middle" class="s">read and write file formats. No meaning added.</text>
-  <rect x="150" y="86" width="560" height="52" rx="8" class="box-c"/><text x="430" y="108" text-anchor="middle" class="b c">L1 REPRESENTATION (the IR)</text><text x="430" y="126" text-anchor="middle" class="s">entities, stable IDs, typed edges, dual geometry, extents, provenance</text>
-  <rect x="150" y="152" width="560" height="52" rx="8" class="box-c"/><text x="430" y="174" text-anchor="middle" class="b c">L2 RELATION ENGINE</text><text x="430" y="192" text-anchor="middle" class="s">F1–F5, evaluated exactly. The single source of geometric truth.</text>
-  <rect x="150" y="218" width="560" height="40" rx="8" class="box-n"/><text x="430" y="243" text-anchor="middle"><tspan class="b">L3 ENCODING</tspan> <tspan class="s">: the model-facing view of L1/L2</tspan></text>
-  <rect x="150" y="268" width="560" height="64" rx="8" class="box-m"/><text x="430" y="290" text-anchor="middle" class="b m">L4 PROPOSAL  +  CRITIC</text><text x="430" y="308" text-anchor="middle" class="s">interprets intent, queries L2, proposes an edit or a question. Critic judges meaning and faithfulness.</text>
-  <rect x="150" y="346" width="560" height="64" rx="8" class="box-c"/><text x="430" y="368" text-anchor="middle" class="b c">L5 AUTHORITY</text><text x="430" y="386" text-anchor="middle" class="s">admissibility · apply with consequences · differential rule check · commit or revert</text>
-  <path d="M430 72 V86 M430 138 V152 M430 204 V218 M430 258 V268 M430 332 V346" class="ln" marker-end="url(#ah2)"/>
-  <!-- backward paths -->
-  <path d="M710 378 H790 V300 H710" class="ln dash" marker-end="url(#ah2)"/>
-  <text x="798" y="344" class="s" transform="rotate(90 798 344)">inadmissible · regressive</text>
-  <path d="M150 300 H70 V430 H430 V410" class="ln dash" stroke="#2d7a4b" marker-end="url(#ah2)"/>
-  <text x="76" y="425" class="s" style="fill:#2d7a4b">under-determined → the question goes to the user, the answer returns as the next request</text>
-  </svg>
-<figcaption>Figure 11. The reference architecture. The guarantee lives entirely in L5.</figcaption>
-</figure>
-
-<h3>L5 in detail: total, terminal, differential</h3>
-<ul>
-<li><b>Total and terminal:</b> every change passes through it, nothing bypasses it, its verdict is final.</li>
-<li><b>Deterministic.</b></li>
-<li><b>It judges the map, not the proposal.</b> It runs the rules on the state before and after, and only <i>new</i> problems count. A pre-existing defect is never blamed on the edit and never silently “repaired” alongside it. [This matters a lot: the real customer maps carry real defects.]</li>
+<h2>4. Why each box exists</h2>
+<ul class="why">
+<li><b>L0 + L1 + R</b>: file formats store recipes and “valid until the next record”, so they are hard to edit. Edit a clean internal map instead.</li>
+<li><b>L2 + F</b>: “understanding a map” is a fixed list of questions. Code answers them exactly, so the model never guesses geometry.</li>
+<li><b>L3 + E</b>: show the model relations and references, not raw numbers, so it cannot invent a number.</li>
+<li><b>L4 vs L5</b>: proposing and deciding are different skills. The model proposes; code decides.</li>
+<li><b>L5 compares before vs after</b>: real maps already have defects. Only new ones are blamed on the edit.</li>
 </ul>
 
-<h3>The three return paths (keep them distinct)</h3>
+<h2>5. Where each letter lives</h2>
 <table>
-<tr><th>Path</th><th>Meaning</th><th>What happens</th></tr>
-<tr><td><b>inadmissible</b></td><td>A proposal failed a check.</td><td>The reason goes back to L4, which answers again under a bounded retry budget.</td></tr>
-<tr><td><b>regressive</b></td><td>The edit applied cleanly but left the map worse.</td><td>Same return path, different reason, same budget.</td></tr>
-<tr><td><b>under-determined</b></td><td>The request cannot be resolved without information only the requester has.</td><td>Nothing is attempted. A question goes to the user; the answer comes back as the next request against <i>unchanged</i> state. <b>This is a success, not a failure</b>, and should be measured as one. A system that never does it is guessing.</td></tr>
-</table>
-</section>
-
-<section id="encoding">
-<h2>7. Encodings E1–E4: how to show the map to a model</h2>
-<p>L3 turns the IR into model input. The choices decide whether geometric competence is learnable at all. They are independent of which model you use.</p>
-<table>
-<tr><th>Rule</th><th>What it says</th><th>Why</th></tr>
-<tr><td><b>E1</b> Local frame, always</td><td>Origin at the entity in question. Position along the road normalised by extent. Lateral offset kept in <b>metres</b> (widths carry meaning). Headings as (sin, cos) pairs. Curvature dimensionless.</td><td>Translation, rotation and scale invariance for free: the same configuration looks the same wherever it occurs, so the model need not relearn it at every absolute coordinate. Sin/cos avoids the 359° vs 1° discontinuity.</td></tr>
-<tr><td><b>E2</b> Typed graph, not serialised text</td><td>Entities are nodes, F-relations are typed edges, geometry enters as resolved polyline features.</td><td>Flattening to a document destroys the structure the vocabulary was defined to capture.</td></tr>
-<tr><td><b>E3</b> Symbols as symbols, quantities as references</td><td>Categories are symbols. A quantity in a proposal is a <i>reference to a computed result</i>, never a literal.</td><td>A proposal that cannot express a literal cannot fabricate one. The hard rule becomes <b>structural</b> and holds regardless of model behaviour.</td></tr>
-<tr><td><b>E4</b> Optional visual channel</td><td>Rendered top-down images through a vision encoder, fused later as a separate branch.</td><td>Weak for exact values, strong for “this looks unusual”. Worth it mainly if you will also consume imagery.</td></tr>
-</table>
-<p><b>The test of a good encoding:</b> a model trained on it should transfer to a map it has never seen and to a format it has never been trained on, because the encoding exposes <i>relations</i>, not <i>syntax</i>.</p>
-</section>
-
-<section id="levels">
-<h2>8. Data, evaluation and the build levels (C0–C6)</h2>
-
-<h3>Where training data comes from</h3>
-<p>L2 and L5 together are an <b>automatic labeller</b>. A deterministic evaluator over the vocabulary, plus a deterministic verdict on whether a map improved, is at once a labelling function, a reward function and a scorer.</p>
-<table>
-<tr><th>Recipe</th><th>Construction</th><th>Competence taught</th></tr>
-<tr><td>perturb → restore</td><td>Corrupt a valid map in a known way; the task is to repair it; the original is the target.</td><td>Repair (and the “automated correction” use in section 9.1 of the document).</td></tr>
-<tr><td>mask → recover</td><td>Remove an attribute and require it back.</td><td>Attribute priors; the map is its own label.</td></tr>
-<tr><td>compute → predict</td><td>Ask a question the engine answers exactly.</td><td>Quantitative intuition, unlimited volume.</td></tr>
-<tr><td>enumerate relations</td><td>Label entity pairs across all five families.</td><td>The vocabulary itself.</td></tr>
-<tr><td>round trip</td><td>Propose, apply, emit, re-read, re-check.</td><td>End-to-end edit validity.</td></tr>
-<tr><td>threshold pairs</td><td>The same corruption at magnitudes straddling the tolerance.</td><td>Where the decision boundary actually lies.</td></tr>
-</table>
-<p><b>Two corpora are needed.</b> Real maps give the true distribution but almost no negatives. Constructed data gives unlimited negatives, graded difficulty and exact truth, but a model trained only on it learns the generator’s assumptions. So: constructed data for curriculum and negatives, real data for distribution and held-out evaluation.</p>
-
-<h3>Six evaluation suites and two hard gates</h3>
-<table>
-<tr><th>Suite</th><th>Item → scoring</th><th>What it protects</th></tr>
-<tr><td>Relational</td><td>(map, pair, family) → predicate, graded by D</td><td>Geometric competence in isolation</td></tr>
-<tr><td>Edit correctness</td><td>(map, instruction) → expected change; exact on symbols, ε-tolerant on quantities</td><td>The core capability</td></tr>
-<tr><td>Restoration</td><td>corrupted map → repaired map</td><td>Correction workflows</td></tr>
-<tr><td>Abstention</td><td>ambiguous or impossible instructions → did it ask rather than guess?</td><td>The highest-cost production failure</td></tr>
-<tr><td>Non-regression</td><td>edits on maps with existing defects → no new defects, old ones untouched</td><td>The L5 contract</td></tr>
-<tr><td>Consequence</td><td>edits with known forced propagation → every required consequence applied and nothing beyond</td><td>Representation and rewrite-rule correctness</td></tr>
-</table>
-<div class="box warn"><span class="t">Hard gates</span>
-Two results are gates, not metrics to trade: <b>non-regression</b> and <b>abstention accuracy</b>. A gain elsewhere never compensates for a loss in either. Also: score <i>accuracy-when-answering</i> and <i>abstention rate</i> separately, split held-out data by <b>whole map</b> (not by edit), and treat cost (queries, tokens, latency) as a first-class metric.</div>
-
-<h3>The capability levels: build in this order</h3>
-<figure>
-<svg viewBox="0 0 860 330" role="img" aria-label="Capability levels">
-  <g font-size="13">
-  <rect x="40"  y="260" width="780" height="44" rx="6" class="box-g"/><text x="56" y="287"><tspan class="b">C0 measured</tspan> the evaluation suites, populated and hand-checked. Requires nothing.</text>
-  <rect x="70"  y="212" width="750" height="44" rx="6" class="box-g"/><text x="86" y="239"><tspan class="b">C1 grounded</tspan> the F vocabulary implemented in L2, as first-class queries. No learning.</text>
-  <rect x="100" y="164" width="720" height="44" rx="6" class="box-c"/><text x="116" y="191"><tspan class="b">C2 represented</tspan> the IR meeting R1–R5, L2 built on it, a second format as the independence check.</text>
-  <rect x="130" y="116" width="690" height="44" rx="6" class="box-c"/><text x="146" y="143"><tspan class="b">C3 critiqued</tspan> dedicated critics judge meaning and faithfulness. Needs C0 and C1.</text>
-  <rect x="160" y="68"  width="660" height="44" rx="6" class="box-n"/><text x="176" y="95"><tspan class="b">C4 adapted</tspan> proposal layer trained on query traces and generated tasks.</text>
-  <rect x="190" y="20"  width="630" height="44" rx="6" class="box-n"/><text x="206" y="47"><tspan class="b">C5 optimised</tspan> improved against the deterministic verdict. <tspan class="b">C6 perceptual</tspan> learned encoder + vision. Research.</text>
-  </g>
-</svg>
-<figcaption>Figure 12. Each level is justified by the one below it, and each is abandonable without stranding the rest.</figcaption>
-</figure>
-<p>Two points to remember. First, <b>C0 and C1 need no machine learning</b>. The document argues much of the practical failure is the system being unable to <i>express</i> “immediately to the right of”, “between these two”, “nearest one facing this way”, not the model being unable to reason, so exposing the vocabulary as queries has the highest return per effort. Second, the <b>decoupling rule</b>: no level may make the system depend on a component that might not work. Every learned component sits behind a switch with the deterministic path as its fallback, and the system must run with all of them off.</p>
-</section>
-
-<section id="limits">
-<h2>9. Limits</h2>
-<h3>The document’s own admissions</h3>
-<ul>
-<li><b>Tolerances.</b> What ε means for each continuity grade is a domain decision, and it propagates into evaluation, admissibility and discrepancy detection.</li>
-<li><b>Unexpressed rules.</b> Rules the vocabulary cannot express must be listed with reasons, never dropped quietly.</li>
-<li><b>Failure modes it lists:</b> learned numbers leaking into the map; the representation work becoming the whole programme; constructed data being too easy; objectives satisfied degenerately (a no-op edit is admissible and non-regressive, so faithfulness must gate any reward); abstention decaying as the model gets stronger; the vocabulary silently under-covering; pre-existing defects blamed on edits; learned components becoming load-bearing.</li>
-<li><b>Unknown:</b> whether real before/after edit histories can be obtained; which model posture (small adapted model vs general model with critics) is better.</li>
-<li><b>Conditions that should change the plan:</b> if C1 and C3 close most of the gap, the higher levels may not be worth building (a success); if a second format needs special cases inside L1, the representation did not generalise; if abstention accuracy cannot be held, you have a suggestion engine, not an editor.</li>
-</ul>
-<h3>[my reading] Things the document does not settle</h3>
-<ul>
-<li>It says <b>what</b> the system must satisfy, not <b>how</b> to build it. Layer boundaries and the closed vocabulary are claims. Nobody has shown them sufficient yet; your C0 measurements are what would show it.</li>
-<li>“C1 and C3 close most of the gap” is a hypothesis.</li>
-<li>F1 on 2D footprints and F5 at joins go wrong if you compare the wrong things. Your own review notes recorded false alarms from comparing reference lines and t values at junction joins.</li>
-<li>The cost is large: an IR with all five requirements, for every format, plus a relation engine and eval suites. That is why the document insists on levels.</li>
-<li>The official ASAM checker (qc-opendrive) covers only a small share of the 1.9 rules, and a pole standing inside a driving lane passes it. So the placement rules in L5 are yours to write.</li>
-</ul>
-</section>
-
-<section id="e2e">
-<h2>10. End to end: one request through everything</h2>
-<p>An invented tiny map, so every number can be followed.</p>
-
-<figure>
-<svg viewBox="0 0 860 250" role="img" aria-label="Example map">
-  <rect x="40" y="60" width="680" height="30" class="lane"/><rect x="40" y="90" width="680" height="30" class="lane"/><rect x="40" y="120" width="680" height="30" class="lane"/><rect x="40" y="30" width="680" height="30" class="lane"/>
-  <line x1="40" y1="90" x2="720" y2="90" class="lm" stroke-width="3"/>
-  <text x="46" y="50" class="s">lane 1</text><text x="46" y="110" class="s">lane −1 (3.5 m)</text><text x="46" y="140" class="s">lane −2 (3.5 m)</text>
-  <rect x="190" y="158" width="12" height="12" fill="#b4531f"/><text x="196" y="190" text-anchor="middle" class="b m">signal 55</text><text x="196" y="206" text-anchor="middle" class="s">s = 60, t = −8.0</text>
-  <rect x="720" y="30" width="110" height="120" rx="8" class="box-n"/><text x="775" y="95" text-anchor="middle" class="b">Junction J1</text>
-  <text x="40" y="20" class="s">road 8: straight, length 200 m, heading 0, successor = junction J1</text>
-  <line x1="40" y1="225" x2="720" y2="225" class="ln"/><text x="40" y="243" class="s">s = 0</text><text x="700" y="243" class="s">s = 200</text>
-  <path d="M196 170 V225" class="ln dash"/>
-  <text x="430" y="243" class="s">(−7.0 m is the outer edge of lane −2, so t = −8.0 is 1 m beyond it)</text>
-</svg>
-<figcaption>Figure 13. The example. Road 8 is 200 m long; signal 55 stands 1 m outside the right edge at s = 60.</figcaption>
-</figure>
-
-<div class="box"><b>User request:</b> “Move signal 55 to 10 m before the junction.”</div>
-
-<div class="step"><div class="n">L0 + L1<br>Door in</div><div>
-The file is read through the OpenDRIVE door into the IR. The IR holds: <code>signal:55</code> (permanent ID), <code>road:8</code>, its lanes, <code>junction:J1</code>, and edges <i>attached_to(signal 55, road 8)</i>, <i>successor(road 8, J1)</i>. Each value carries its origin (“imported from file, revision r1”). Unknown extras are stored raw. The file’s original bytes are archived.
-</div></div>
-
-<div class="step"><div class="n">L3<br>Model view</div><div>
-The model is shown a small local view, not the whole map: a graph (nodes: signal 55, road 8, lane −1, lane −2, J1; edges as above) with features in a local frame: signal 55 at 0.30 of the road’s length, t = −8.0 m, heading as (sin, cos). Categories like “signal” are symbols. No raw XML.
-</div></div>
-
-<div class="step"><div class="n">L4<br>Understand</div><div>
-<span class="pill pm">model</span> reads the request. It decides: operation = <b>move</b>; target = signal 55 (exists, unique); anchor = “the junction”. Question to itself: which junction? It asks L2: <i>which junctions are connected to road 8?</i> → only J1, at the <b>end</b> of the road. Unambiguous, so no question to the user. Distance = 10 m, given by the user, with unit metres (stated, not assumed). Nothing was said about t or orientation, so they stay as they are.
-<div class="box warn" style="margin-top:8px"><span class="t">If it had been ambiguous</span>If road 8 had junctions at both ends, or the user said “move it near the junction”, the model returns the <b>under-determined</b> path with a question (“which end, and how far?”). Nothing is changed.</div>
-</div></div>
-
-<div class="step"><div class="n">L2<br>Resolve</div><div>
-<span class="pill pc">code</span> answers the model’s queries exactly and hands back <b>named handles</b>:
-<pre>Q1 = end_of(road:8)                  → s = 200.0   origin: computed from road 8 geometry (length)
-Q2 = Q1 − 10.0                        → s = 190.0   origin: computed; 10.0 from user
-Q3 = lane_outer_edge(road:8, lane −2) → t = −7.0    (for later checks)</pre>
-These are the F-queries in action: an interval/position question about the road’s end (F2 flavour), a lane-order question for the edge (F3).
-</div></div>
-
-<div class="step"><div class="n">L4<br>Plan</div><div>
-<span class="pill pm">model</span> proposes, using references, never literals (E3):
-<pre>{ "op": "move",
-  "target": "signal:55",
-  "set": { "s": { "ref": "Q2" } } }</pre>
-<span class="pill pc">code</span> turns this into a change set: <code>signal:55.s: 60.0 → 190.0</code>, with the inverse for undo (<code>190.0 → 60.0</code>), a declared <b>allowed scope</b> (only <code>signal:55.s</code>), and a <b>required effect</b> (afterwards, s must equal 190.0 within tolerance). Model output stopped here; it has written no number.
-</div></div>
-
-<div class="step"><div class="n">L5<br>Verify</div><div>
-<span class="pill pc">code</span> applies the change to a <b>copy</b> and checks the <b>difference</b> between before and after:
-<table>
-<tr><th>Check</th><th>Result</th></tr>
-<tr><td>Schema valid</td><td>pass</td></tr>
-<tr><td>s inside the road: 0 ≤ 190 ≤ 200 (F2)</td><td>pass</td></tr>
-<tr><td>Footprint not inside a drivable lane (F1): t = −8.0 is beyond −7.0</td><td>pass (disjoint)</td></tr>
-<tr><td>No other object at (190, −8.0)</td><td>pass</td></tr>
-<tr><td>Orientation unchanged (F4)</td><td>pass</td></tr>
-<tr><td>Rule findings before vs after, compared by identity: the set of findings is the same</td><td>pass (no <i>new</i> findings; old ones untouched)</td></tr>
-<tr><td>Only allowed scope changed; required effect holds</td><td>pass</td></tr>
-</table>
-</div></div>
-
-<div class="step"><div class="n">L5 + L0<br>Apply</div><div>
-The candidate is exported through the door. Only the signal’s <code>s</code> attribute changes in the file; everything else, including content the system does not understand, keeps its bytes. The exported file is <b>re-imported</b> and compared to the candidate IR: only <code>signal:55.s</code> differs. The change is committed as revision r2. r1 stays available, so undo is simply another checked edit back to 60.0.
-</div></div>
-
-<div class="step"><div class="n">Respond</div><div>
-“Moved signal 55 on road 8 from s = 60.0 to s = 190.0, which is 10.0 m before junction J1. Nothing else changed.” Receipts (the checks that ran, with results) are attached.
-</div></div>
-
-<figure>
-<svg viewBox="0 0 860 150" role="img" aria-label="Request flow">
-  <g font-size="12">
-  <rect x="10" y="40" width="96" height="60" rx="8" class="box-n"/><text x="58" y="66" text-anchor="middle" class="b">Door in</text><text x="58" y="84" text-anchor="middle" class="s">file → IR</text>
-  <rect x="122" y="40" width="96" height="60" rx="8" class="box-m"/><text x="170" y="66" text-anchor="middle" class="b m">Understand</text><text x="170" y="84" text-anchor="middle" class="s">model</text>
-  <rect x="234" y="40" width="96" height="60" rx="8" class="box-c"/><text x="282" y="66" text-anchor="middle" class="b c">Resolve</text><text x="282" y="84" text-anchor="middle" class="s">engine → Q1,Q2</text>
-  <rect x="346" y="40" width="96" height="60" rx="8" class="box-m"/><text x="394" y="66" text-anchor="middle" class="b m">Plan</text><text x="394" y="84" text-anchor="middle" class="s">refs only</text>
-  <rect x="458" y="40" width="96" height="60" rx="8" class="box-c"/><text x="506" y="66" text-anchor="middle" class="b c">Verify</text><text x="506" y="84" text-anchor="middle" class="s">before vs after</text>
-  <rect x="570" y="40" width="96" height="60" rx="8" class="box-c"/><text x="618" y="66" text-anchor="middle" class="b c">Apply</text><text x="618" y="84" text-anchor="middle" class="s">commit, export</text>
-  <rect x="682" y="40" width="96" height="60" rx="8" class="box-n"/><text x="730" y="66" text-anchor="middle" class="b">Respond</text><text x="730" y="84" text-anchor="middle" class="s">user</text>
-  <path d="M106 70 H122 M218 70 H234 M330 70 H346 M442 70 H458 M554 70 H570 M666 70 H682" class="ln" marker-end="url(#ah2)"/>
-  <path d="M506 100 V125 H394 V100" class="ln dash" stroke="#a62e2e" marker-end="url(#ah2)"/>
-  <text x="450" y="142" text-anchor="middle" class="s" style="fill:#a62e2e">inadmissible / regressive → back to the model</text>
-  <path d="M170 40 V15 H730 V40" class="ln dash" stroke="#2d7a4b" marker-end="url(#ah2)"/>
-  <text x="450" y="12" text-anchor="middle" class="s" style="fill:#2d7a4b">under-determined → ask the user</text>
-  </g>
-</svg>
-<figcaption>Figure 14. The happy path and the two return paths.</figcaption>
-</figure>
-
-<h3>Three variants of the same request</h3>
-<table>
-<tr><th>Request</th><th>What happens</th><th>Path</th></tr>
-<tr><td>“Move signal 55 to 300 m from the start.”</td><td>Plan sets s = 300. Verify: s must be within [0, 200]. Fails. The reason (“road 8 has length 200.0”) returns to the model. It retries within its budget, or asks the user.</td><td>inadmissible</td></tr>
-<tr><td>“Move signal 55 into the right lane at 190.”</td><td>Model proposes t = lane −1’s centre (a handle, −1.75). It applies cleanly and passes the schema. Verify F1: footprint is <b>within</b> a drivable lane. The official checker would not complain (it does not see this), but the engine’s rule does. It is a new finding, so the edit is blocked.</td><td>regressive (new defect) → back to the model</td></tr>
-<tr><td>“Add some signs to make the road safer.”</td><td>Cannot resolve which sign, where, or how many. Nothing is attempted; the model asks. The answer comes back as the next request against the unchanged map.</td><td>under-determined (a success)</td></tr>
-</table>
-</section>
-
-<section id="yours">
-<h2>11. Where your own pipeline (Understand → … → Respond) sits on this map</h2>
-<p>You said you will follow your own pipeline, not the document’s. They are two views of the same thing: the document describes <i>layers and responsibilities</i>; your pipeline is a <i>time order</i> of one request. They line up like this:</p>
-<table>
-<tr><th>Your stage</th><th>Which layers it uses</th><th>Who acts</th></tr>
-<tr><td>Understand</td><td>L3 encoding in, L4 proposal; read tools call L2</td><td><span class="pill pm">model</span> with exact answers from <span class="pill pc">engine</span></td></tr>
-<tr><td>Resolve</td><td>L2: turns relations into computed handles</td><td><span class="pill pc">code</span></td></tr>
-<tr><td>Plan</td><td>L4 proposal, made into a change set</td><td><span class="pill pm">model</span> drafts, <span class="pill pc">code</span> fills and records</td></tr>
-<tr><td>Verify</td><td>L5 admissibility and differential rule check</td><td><span class="pill pc">code</span></td></tr>
-<tr><td>Apply</td><td>L5 commit, L0 export and re-import</td><td><span class="pill pc">code</span></td></tr>
-<tr><td>Respond</td><td>Report plus receipts; or return paths</td><td>mostly <span class="pill pc">code</span> with wording help from the model</td></tr>
-</table>
-<p>Everything under the stages (IR, relation engine, doors) is what makes them work, and it is why your nine IR steps come first.</p>
-</section>
-
-<section id="cheat">
-<h2>12. Cheat sheet</h2>
-<table>
-<tr><th>Letters</th><th>Answers the question…</th><th>One line</th></tr>
-<tr><td><b>P1–P4</b></td><td>Why is this hard?</td><td>Maps are constrained; proposing ≠ deciding; competence is relational; formats are built for delivery.</td></tr>
-<tr><td><b>R1–R5</b></td><td>What must the internal map provide?</td><td>Stable IDs · typed edges · dual geometry · explicit extents · provenance.</td></tr>
-<tr><td><b>F1–F5</b></td><td>What does “understanding a map” consist of?</td><td>Topology · interval · order · direction (qualitative) · continuity (metric).</td></tr>
-<tr><td><b>L0–L5</b></td><td>Who does which job?</td><td>Codecs · IR · relation engine · encoding · proposal(+critic) · authority.</td></tr>
-<tr><td><b>E1–E4</b></td><td>How is the map shown to a model?</td><td>Local frame · graph · references not literals · optional images.</td></tr>
-<tr><td><b>C0–C6</b></td><td>In what order to build?</td><td>Measure · relations · IR · critics · adapt · optimise · perceive.</td></tr>
+<tr><th>Letters</th><th>Lives in</th><th>One line</th></tr>
+<tr><td><b>P1–P4</b></td><td>the reasons</td><td>Why this design exists at all.</td></tr>
+<tr><td><b>R1–R5</b></td><td>inside L1</td><td>What the internal map must contain.</td></tr>
+<tr><td><b>F1–F5</b></td><td>inside L2</td><td>The questions code can answer.</td></tr>
+<tr><td><b>E1–E4</b></td><td>L3</td><td>How the map is shown to the model.</td></tr>
+<tr><td><b>C0–C6</b></td><td>the build order</td><td>Measure → relations → IR → critic → train.</td></tr>
 </table>
 
-<h3>Words to keep straight</h3>
-<table>
-<tr><th>Term</th><th>Meaning</th></tr>
-<tr><td>IR</td><td>The format-free internal map the model and code work on.</td></tr>
-<tr><td>Door / codec</td><td>The only code that reads or writes a particular file format.</td></tr>
-<tr><td>Handle</td><td>A named reference to a value the code computed, which the model may cite but cannot write.</td></tr>
-<tr><td>Differential check</td><td>Compare problems before and after an edit; only new ones count.</td></tr>
-<tr><td>Under-determined</td><td>The request cannot be resolved without asking; a valid, good outcome.</td></tr>
-<tr><td>Near-miss / graded distance D</td><td>How wrong a wrong relation answer is, so evaluation and learning get a useful signal.</td></tr>
-<tr><td>Provenance</td><td>Who said this value, from where, how certain.</td></tr>
-<tr><td>Tolerance ε</td><td>The size of gap or kink that still counts as “continuous”; a domain decision.</td></tr>
-</table>
-
-<div class="box good"><span class="t">If you keep one sentence</span>
-The model decides <b>what and which</b>. The code decides <b>every number and every verdict</b>. Everything else in the document (R, F, L, E, C) exists to make that sentence true, testable and extensible to formats other than OpenDRIVE.</div>
-</section>
-
+<p class="foot">Longer version with diagrams: <a href="details.html">details.html</a>.</p>
 </main>
-</div>
 </body>
 </html>
