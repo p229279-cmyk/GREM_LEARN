@@ -274,6 +274,49 @@ code{font:13.5px ui-monospace,Menlo,Consolas,monospace;background:#f0ece1;paddin
 <p><b>Same four phases, same kinds of question, different content.</b> That is what makes it scale: a new map or sentence brings new <i>combinations</i>, not new <i>kinds</i>.</p>
 <div class="req" style="background:#f8f0d6;border-color:#e6d79c;margin-top:14px"><b>What is mine, what is the document’s.</b> The document defines the closed vocabulary and the rule that every rule be expressible. It does <b>not</b> define this planning process. The blanks-and-rules process is my synthesis from that vocabulary, from GREM-3’s “Allowed / Required” idea and from your operation register. It is a proposal for you to challenge. <b>Open:</b> nobody has shown the list is complete. If a rule cannot be written with these kinds, we declare the gap instead of hiding it.</div>
 </div>
+<div class="st" style="border-color:#e6d79c"><div class="h">EXTRA-1 · The correction and mechanism 1, drawn in plain text</div>
+<p><b>1. The correction before K1: the 8 questions are examples, and the kinds are a grouping</b></p>
+<pre class="x"> 8 questions from Step 2                 the few KINDS
+ ─────────────────────────               ───────────────
+ 1 which thing is signal 55?    ─────►   which thing   (lookup)
+ 2 which road is it on?         ─────►┐
+ 3 which junction?              ─────►├► connected-to   (follow links)
+ 4 start or end of road 8?      ─────►┘
+ 5 where is that end, in s?     ─────►┐
+ 6 subtract 10                  ─────►┴► along  F2     (engine)
+ 7 is the new place legal?      ─────►┬► area   F1
+                                      ├► across F3
+                                      └► facing F4
+ 8 write back, break nothing    ─ ─ ─►   the rules check (before vs after)
+
+                                         join F5: not needed in this edit</pre>
+<p>Many questions collapse into a few kinds. We did not get the kinds from the job. We chose them by grouping questions that ask the same sort of thing.</p>
+<p><b>2. Mechanism 1: where questions come from</b></p>
+<pre class="x"> SOURCE A: the operation                SOURCE B: the rules
+   "move"                                 "must hold after the edit"
+      │ has                                  │ only those the edit could break
+      ▼                                      ▼
+ BLANKS it needs                        RULES IN SCOPE
+ (which thing, where)                   (inside the road, not in a driving lane)
+      │ each EMPTY blank                     │ each rule
+      │ = "I need this value"                │ = "does this hold?"
+      └───────────────┬──────────────────────┘
+                      ▼
+                 QUESTIONS
+                      │ each one is a KIND
+                      ▼
+          which thing · connected-to · along · across · area · facing · join
+                      │ answered by
+                      ▼
+          CODE: lookup in the IR, or the relation engine
+                      │
+          ┌───────────┴───────────┐
+          ▼                       ▼
+   fills the blank          pass / fail
+   (source A)               (source B)</pre>
+<p><b>In one line:</b> the operation gives the blanks, the rules give the checks, and both turn into the same few kinds of question that code answers.</p>
+<p>Source A builds the edit. Source B checks the edit. A question that fills no blank and checks no rule is never asked.</p>
+</div>
 <div class="st"><div class="h">Step 3 · Names: “8” means two things</div><p><span class="k">Need</span>Point at things unambiguously.</p><p><span class="k">By hand</span>In the file, road 8 and junction 8 both have id “8”. “Remove 8” is ambiguous. Also: if I insert a new lane, lane −3 becomes lane −4, and anything saying “lane −3” now points at a different lane.</p><p><span class="k">Why</span>Names in a file are labels that change or collide. If our own notes use them, they break the moment anything is edited.</p><p class="add"><span class="k">So we add</span><b>R1, permanent IDs.</b> Give every thing its own internal name and remember the file label separately: <code>road 8 → road:a1</code>, <code>junction 8 → junction:b7</code>, <code>signal 55 → signal:c3</code>, <code>lane −2 of road 8 → lane:d4</code>. Renumbering changes the label, never the ID.</p></div>
 <div class="st"><div class="h">Step 4 · Reading the connections</div><p><span class="k">Need</span>Answer “which junction is at which end of road 8?”</p><p><span class="k">By hand</span>Read <code>&lt;successor elementType="junction" elementId="8"/&gt;</code>. Successor means the <i>end</i> of the road. So junction 8 (now junction:b7) is at the end.</p><p><span class="k">Why</span>By hand I scan the XML each time. Slow, and I forget things: later, to delete a lane, I must find everything that points at it.</p><p class="add"><span class="k">So we add</span><b>R2, links as edges.</b> Write it once as a line: <code>road:a1 --successor--&gt; junction:b7</code>. “What touches road 8?” is now a lookup. “What points at this lane?” lists the things that would break.</p></div>
 <div class="st"><div class="h">Step 5 · Where is the end of the road, in numbers?</div><p><span class="k">Need</span>Q1 = the s value of the end.</p><p><span class="k">By hand</span>Easy answer: <code>length="200"</code>. But is it true? The real geometry is a list of pieces (line, arc, spiral…), each with its own length. I should add them up: 200. On the real customer map, GREM-2 found 90 roads where the declared length and the pieces disagree.</p><p><span class="k">Why</span>Trusting one attribute is exactly how the old pipeline went wrong. Also for “the middle of a curved road” you must evaluate the curve, and the curve parameter is not the distance (one old formula was off by up to 33 m).</p><p class="add"><span class="k">So we add</span><b>R3, shape stored twice.</b> Keep the file’s formula (to write back exactly) <i>and</i> a computed version (points along the road) that code measures. Now <code>Q1 = 200.0</code> is a measurement, not a guess.</p></div>
